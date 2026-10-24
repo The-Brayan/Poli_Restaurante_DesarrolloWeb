@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Categoría - PoliRestaurante</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; }
+        header { background: #17365d; color: white; text-align: center; padding: 25px; }
+        .contenedor { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+        h2 { color: #17365d; }
+        label { display: block; margin-top: 20px; margin-bottom: 8px; font-weight: bold; }
+        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; margin-top: 25px; padding: 13px; background: #17365d; color: white; border: 0; border-radius: 6px; cursor: pointer; }
+        .volver { display: block; text-align: center; margin-top: 20px; color: #17365d; text-decoration: none; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>PoliRestaurante</h1>
+    <p>Administración de categorías</p>
+</header>
+
+<div class="contenedor">
+    <h2>Registrar categoría</h2>
+
+    <form action="{{ url_for('agregar_categoria') }}" method="POST">
+        <label for="nombre">Nombre de la categoría</label>
+        <input type="text" id="nombre" name="nombre"
+               maxlength="255" required>
+
+        <button type="submit">Guardar categoría</button>
+    </form>
+
+    <a class="volver" href="{{ url_for('listar_categorias') }}">
+        ← Volver a categorías
+    </a>
+</div>
+</body>
+</html>

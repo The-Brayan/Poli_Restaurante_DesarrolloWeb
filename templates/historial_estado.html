@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Estados - PoliRestaurante</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+        }
+        header {
+            background: #17365d;
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+        .contenedor {
+            max-width: 1100px;
+            margin: 35px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.1);
+            overflow-x: auto;
+        }
+        h2 { color: #17365d; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th { background: #17365d; color: white; }
+        .volver {
+            display: inline-block;
+            margin-top: 20px;
+            color: #17365d;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>PoliRestaurante</h1>
+    <p>Historial de estados de pedidos</p>
+</header>
+
+<div class="contenedor">
+    <h2>Historial de cambios</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID historial</th>
+                <th>ID pedido</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Rol usuario</th>
+                <th>ID usuario</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for registro in historial_estados %}
+            <tr>
+                <td>{{ registro.id_historial }}</td>
+                <td>{{ registro.id_pedido }}</td>
+                <td>{{ registro.estado }}</td>
+                <td>{{ registro.fecha }}</td>
+                <td>{{ registro.rol_usuario_cambio }}</td>
+                <td>{{ registro.id_usuario_cambio }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="6">
+                    No hay cambios de estado registrados.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <a class="volver" href="{{ url_for('index') }}">
+        ← Volver al inicio
+    </a>
+</div>
+</body>
+</html>
