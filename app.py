@@ -4355,5 +4355,657 @@ def eliminar_pedido(id_pedido):
             cursor.close()
         conexion.close()
 
+# ==========================================
+# API REST - CRUD CATEGORIA  BRAYAN
+# ==========================================
+
+@app.route("/api/categorias", methods=["GET"])
+def listar_categorias():
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+        cursor.execute("""
+            SELECT id_categoria, nombre
+            FROM categoria
+            ORDER BY id_categoria
+        """)
+        return jsonify(cursor.fetchall()), 200
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/categorias/<int:id_categoria>", methods=["GET"])
+def consultar_categoria(id_categoria):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+        cursor.execute("""
+            SELECT id_categoria, nombre
+            FROM categoria
+            WHERE id_categoria = %s
+        """, (id_categoria,))
+
+        categoria = cursor.fetchone()
+
+        if categoria is None:
+            return jsonify({"error": "Categoría no encontrada"}), 404
+
+        return jsonify(categoria), 200
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/categorias", methods=["POST"])
+def crear_categoria():
+    datos = request.get_json(silent=True)
+
+    if not isinstance(datos, dict) or not datos.get("nombre"):
+        return jsonify({
+            "error": "El campo nombre es obligatorio"
+        }), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("""
+            INSERT INTO categoria (nombre)
+            VALUES (%s)
+        """, (datos["nombre"],))
+
+        nuevo_id = cursor.lastrowid
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Categoría creada correctamente",
+            "id_categoria": nuevo_id
+        }), 201
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/categorias/<int:id_categoria>", methods=["PUT"])
+def actualizar_categoria(id_categoria):
+    datos = request.get_json(silent=True)
+
+    if not isinstance(datos, dict) or not datos.get("nombre"):
+        return jsonify({
+            "error": "El campo nombre es obligatorio"
+        }), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(buffered=True)
+        cursor.execute("""
+            UPDATE categoria
+            SET nombre = %s
+            WHERE id_categoria = %s
+        """, (datos["nombre"], id_categoria))
+
+        if cursor.rowcount == 0:
+            cursor.execute("""
+                SELECT id_categoria
+                FROM categoria
+                WHERE id_categoria = %s
+            """, (id_categoria,))
+
+            if cursor.fetchone() is None:
+                return jsonify({"error": "Categoría no encontrada"}), 404
+
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Categoría actualizada correctamente"
+        }), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/categorias/<int:id_categoria>", methods=["DELETE"])
+def eliminar_categoria(id_categoria):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(buffered=True)
+        cursor.execute("""
+            DELETE FROM categoria
+            WHERE id_categoria = %s
+        """, (id_categoria,))
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Categoría no encontrada"}), 404
+
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Categoría eliminada correctamente"
+        }), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({
+            "error": str(error),
+            "detalle": "Verifica si hay productos relacionados con esta categoría."
+        }), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+# =======================================
+# API REST - HISTORIAL DE ESTADO BRAYAN
+# =======================================
+
+@app.route("/api/historial-estados", methods=["GET"])
+def listar_historial_estados():
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+        cursor.execute("""
+            SELECT id_historial, id_pedido, estado, fecha,
+                   rol_usuario_cambio, id_usuario_cambio
+            FROM historial_estado
+            ORDER BY id_historial
+        """)
+        registros = cursor.fetchall()
+
+        return app.response_class(
+            response=__import__("json").dumps(registros, default=str),
+            status=200,
+            mimetype="application/json"
+        )
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/historial-estados/<int:id_historial>", methods=["GET"])
+def consultar_historial_estado(id_historial):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+        cursor.execute("""
+            SELECT id_historial, id_pedido, estado, fecha,
+                   rol_usuario_cambio, id_usuario_cambio
+            FROM historial_estado
+            WHERE id_historial = %s
+        """, (id_historial,))
+
+        registro = cursor.fetchone()
+        if registro is None:
+            return jsonify({"error": "Registro no encontrado"}), 404
+
+        return app.response_class(
+            response=__import__("json").dumps(registro, default=str),
+            status=200,
+            mimetype="application/json"
+        )
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/historial-estados", methods=["POST"])
+def crear_historial_estado():
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Debes enviar los datos en formato JSON"}), 400
+
+    if "id_pedido" not in datos or "estado" not in datos:
+        return jsonify({
+            "error": "Los campos id_pedido y estado son obligatorios"
+        }), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("""
+            INSERT INTO historial_estado
+                (id_pedido, estado, rol_usuario_cambio, id_usuario_cambio)
+            VALUES (%s, %s, %s, %s)
+        """, (
+            datos["id_pedido"],
+            datos["estado"],
+            datos.get("rol_usuario_cambio"),
+            datos.get("id_usuario_cambio")
+        ))
+
+        conexion.commit()
+        nuevo_id = cursor.lastrowid
+
+        return jsonify({
+            "mensaje": "Registro de historial creado correctamente",
+            "id_historial": nuevo_id
+        }), 201
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/historial-estados/<int:id_historial>", methods=["PUT"])
+def actualizar_historial_estado(id_historial):
+    datos = request.get_json(silent=True)
+
+    if not datos or "estado" not in datos:
+        return jsonify({
+            "error": "Debes enviar el campo estado"
+        }), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(buffered=True)
+        cursor.execute("""
+            UPDATE historial_estado
+            SET estado = %s,
+                rol_usuario_cambio = %s,
+                id_usuario_cambio = %s
+            WHERE id_historial = %s
+        """, (
+            datos["estado"],
+            datos.get("rol_usuario_cambio"),
+            datos.get("id_usuario_cambio"),
+            id_historial
+        ))
+
+        if cursor.rowcount == 0:
+            cursor.execute("""
+                SELECT id_historial
+                FROM historial_estado
+                WHERE id_historial = %s
+            """, (id_historial,))
+
+            if cursor.fetchone() is None:
+                return jsonify({"error": "Registro no encontrado"}), 404
+
+        conexion.commit()
+        return jsonify({
+            "mensaje": "Registro de historial actualizado correctamente"
+        }), 200
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/historial-estados/<int:id_historial>", methods=["DELETE"])
+def eliminar_historial_estado(id_historial):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(buffered=True)
+        cursor.execute("""
+            DELETE FROM historial_estado
+            WHERE id_historial = %s
+        """, (id_historial,))
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Registro no encontrado"}), 404
+
+        conexion.commit()
+        return jsonify({
+            "mensaje": "Registro de historial eliminado correctamente"
+        }), 200
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+# ==========================================
+# API REST - CRUD CAJERO Y MESERO
+# ==========================================
+
+def listar_usuarios_restaurante(tabla, campo_id):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+        cursor.execute(
+            f"SELECT {campo_id}, nombre, usuario_login, estado "
+            f"FROM {tabla} ORDER BY {campo_id}"
+        )
+        return jsonify(cursor.fetchall()), 200
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+def consultar_usuario_restaurante(tabla, campo_id, id_usuario):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+        cursor.execute(
+            f"SELECT {campo_id}, nombre, usuario_login, estado "
+            f"FROM {tabla} WHERE {campo_id} = %s",
+            (id_usuario,)
+        )
+        usuario = cursor.fetchone()
+
+        if usuario is None:
+            return jsonify({"error": "Registro no encontrado"}), 404
+
+        return jsonify(usuario), 200
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+def crear_usuario_restaurante(tabla, campo_id):
+    datos = request.get_json(silent=True)
+
+    if not isinstance(datos, dict):
+        return jsonify({"error": "Debes enviar un objeto JSON válido"}), 400
+
+    obligatorios = ["nombre", "usuario_login", "contrasena_hash"]
+    faltantes = [campo for campo in obligatorios if not datos.get(campo)]
+
+    if faltantes:
+        return jsonify({
+            "error": "Faltan campos obligatorios",
+            "campos": faltantes
+        }), 400
+
+    estado = datos.get("estado", 1)
+    if estado not in (0, 1):
+        return jsonify({"error": "El estado debe ser 0 o 1"}), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute(
+            f"""INSERT INTO {tabla}
+                (nombre, usuario_login, contrasena_hash, estado)
+                VALUES (%s, %s, %s, %s)""",
+            (
+                datos["nombre"],
+                datos["usuario_login"],
+                datos["contrasena_hash"],
+                estado
+            )
+        )
+
+        nuevo_id = cursor.lastrowid
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Registro creado correctamente",
+            campo_id: nuevo_id
+        }), 201
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+def actualizar_usuario_restaurante(tabla, campo_id, id_usuario):
+    datos = request.get_json(silent=True)
+
+    if not isinstance(datos, dict) or not datos:
+        return jsonify({"error": "Debes enviar los datos en formato JSON"}), 400
+
+    campos_permitidos = {
+        "nombre": datos.get("nombre"),
+        "usuario_login": datos.get("usuario_login"),
+        "estado": datos.get("estado")
+    }
+
+    # Solo se actualizan los campos enviados.
+    cambios = {
+        campo: valor
+        for campo, valor in campos_permitidos.items()
+        if campo in datos
+    }
+
+    if "contrasena_hash" in datos:
+        if not datos["contrasena_hash"]:
+            return jsonify({"error": "La contraseña no puede estar vacía"}), 400
+        cambios["contrasena_hash"] = datos["contrasena_hash"]
+
+    if not cambios:
+        return jsonify({"error": "No enviaste campos para actualizar"}), 400
+
+    if "estado" in cambios and cambios["estado"] not in (0, 1):
+        return jsonify({"error": "El estado debe ser 0 o 1"}), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(buffered=True)
+
+        # Los nombres de tabla y columna provienen de las rutas fijas.
+        asignaciones = ", ".join(f"{campo} = %s" for campo in cambios)
+        valores = list(cambios.values()) + [id_usuario]
+
+        cursor.execute(
+            f"UPDATE {tabla} SET {asignaciones} WHERE {campo_id} = %s",
+            valores
+        )
+
+        if cursor.rowcount == 0:
+            cursor.execute(
+                f"SELECT {campo_id} FROM {tabla} WHERE {campo_id} = %s",
+                (id_usuario,)
+            )
+            if cursor.fetchone() is None:
+                return jsonify({"error": "Registro no encontrado"}), 404
+
+        conexion.commit()
+        return jsonify({"mensaje": "Registro actualizado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+def eliminar_usuario_restaurante(tabla, campo_id, id_usuario):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(buffered=True)
+        cursor.execute(
+            f"DELETE FROM {tabla} WHERE {campo_id} = %s",
+            (id_usuario,)
+        )
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Registro no encontrado"}), 404
+
+        conexion.commit()
+        return jsonify({"mensaje": "Registro eliminado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({
+            "error": str(error),
+            "detalle": "Verifica si existen registros relacionados."
+        }), 500
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+# ==========================================
+# CRUD CAJERO BARAYAN
+# ==========================================
+
+@app.route("/api/cajeros", methods=["GET"])
+def listar_cajeros():
+    return listar_usuarios_restaurante("cajero", "id_cajero")
+
+
+@app.route("/api/cajeros/<int:id_cajero>", methods=["GET"])
+def consultar_cajero(id_cajero):
+    return consultar_usuario_restaurante(
+        "cajero", "id_cajero", id_cajero
+    )
+
+
+@app.route("/api/cajeros", methods=["POST"])
+def crear_cajero():
+    return crear_usuario_restaurante("cajero", "id_cajero")
+
+
+@app.route("/api/cajeros/<int:id_cajero>", methods=["PUT"])
+def actualizar_cajero(id_cajero):
+    return actualizar_usuario_restaurante(
+        "cajero", "id_cajero", id_cajero
+    )
+
+
+@app.route("/api/cajeros/<int:id_cajero>", methods=["DELETE"])
+def eliminar_cajero(id_cajero):
+    return eliminar_usuario_restaurante(
+        "cajero", "id_cajero", id_cajero
+    )
+
+
+# ==========================================
+# CRUD MESERO BRAYAN
+# ==========================================
+
+@app.route("/api/meseros", methods=["GET"])
+def listar_meseros():
+    return listar_usuarios_restaurante("mesero", "id_mesero")
+
+
+@app.route("/api/meseros/<int:id_mesero>", methods=["GET"])
+def consultar_mesero(id_mesero):
+    return consultar_usuario_restaurante(
+        "mesero", "id_mesero", id_mesero
+    )
+
+
+@app.route("/api/meseros", methods=["POST"])
+def crear_mesero():
+    return crear_usuario_restaurante("mesero", "id_mesero")
+
+
+@app.route("/api/meseros/<int:id_mesero>", methods=["PUT"])
+def actualizar_mesero(id_mesero):
+    return actualizar_usuario_restaurante(
+        "mesero", "id_mesero", id_mesero
+    )
+
+
+@app.route("/api/meseros/<int:id_mesero>", methods=["DELETE"])
+def eliminar_mesero(id_mesero):
+    return eliminar_usuario_restaurante(
+        "mesero", "id_mesero", id_mesero
+    )
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)
