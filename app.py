@@ -1,6 +1,7 @@
 
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from conexion import obtener_conexion
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from decimal import Decimal, InvalidOperation
 from crud_orm import (
@@ -2924,6 +2925,1435 @@ def api_orm_eliminar_cliente(id_cliente):
         return jsonify({"error": "Cliente no encontrado"}), 404
 
     return jsonify({"mensaje": "Cliente eliminado con ORM"}), 200
+# ============================================================
+# API REST: PRODUCTOS$$ FABIAN DE AQUI
+# ============================================================
+
+# GET: consultar todos los productos
+@app.route("/api/productos", methods=["GET"])
+def api_listar_productos():
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT
+                p.id_producto,
+                p.nombre,
+                p.descripcion,
+                p.precio,
+                p.disponibilidad,
+                p.id_categoria,
+                c.nombre AS categoria
+            FROM producto p
+            INNER JOIN categoria c
+                ON p.id_categoria = c.id_categoria
+            ORDER BY p.id_producto
+        """)
+
+        productos = cursor.fetchall()
+        return jsonify(productos), 200
+
+    except Exception as error:
+        print("Error al consultar productos:", error)
+        return jsonify({"error": "No se pudieron consultar los productos"}), 500
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()
+
+
+# GET: consultar un producto por su identificador
+@app.route("/api/productos/<int:id_producto>", methods=["GET"])
+def api_obtener_producto(id_producto):
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT
+                p.id_producto,
+                p.nombre,
+                p.descripcion,
+                p.precio,
+                p.disponibilidad,
+                p.id_categoria,
+                c.nombre AS categoria
+            FROM producto p
+            INNER JOIN categoria c
+                ON p.id_categoria = c.id_categoria
+            WHERE p.id_producto = %s
+        """, (id_producto,))
+
+        producto = cursor.fetchone()
+
+        if producto is None:
+            return jsonify({"error": "Producto no encontrado"}), 404
+
+        return jsonify(producto), 200
+
+    except Exception as error:
+        print("Error al consultar el producto:", error)
+        return jsonify({"error": "No se pudo consultar el producto"}), 500
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()
+
+
+# POST: registrar un producto
+@app.route("/api/productos", methods=["POST"])
+def api_crear_producto():
+    datos = request.get_json(silent=True)
+
+    if not isinstance(datos, dict):
+        return jsonify({"error": "Debes enviar un objeto JSON"}), 400
+
+    nombre = datos.get("nombre")
+    descripcion = datos.get("descripcion")
+    precio = datos.get("precio")
+    disponibilidad = datos.get("disponibilidad", 1)
+    id_categoria = datos.get("id_categoria")
+
+    if not nombre or precio is None or id_categoria is None:
+        return jsonify({
+            "error": "Los campos nombre, precio e id_categoria son obligatorios"
+        }), 400
+
+    try:
+        precio = float(precio)
+        id_categoria = int(id_categoria)
+        disponibilidad = int(disponibilidad)
+
+        if precio < 0:
+            return jsonify({"error": "El precio no puede ser negativo"}), 400
+
+        if disponibilidad not in (0, 1):
+            return jsonify({
+                "error": "La disponibilidad debe ser 0 o 1"
+            }), 400
+
+    except (ValueError, TypeError):
+        return jsonify({
+            "error": "Revisa el precio, la categoría y la disponibilidad"
+        }), 400
+
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+
+        cursor.execute("""
+            INSERT INTO producto
+                (nombre, descripcion, precio, disponibilidad, id_categoria)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            nombre,
+            descripcion,
+            precio,
+            disponibilidad,
+            id_categoria
+        ))
+
+        conexion.commit()
+        nuevo_id = cursor.lastrowid
+
+        return jsonify({
+            "mensaje": "Producto registrado correctamente",
+            "id_producto": nuevo_id
+        }), 201
+
+    except Exception as error:
+        conexion.rollback()
+        print("Error al registrar producto:", error)
+        return jsonify({
+            "error": "No se pudo registrar el producto. Verifica los datos y la categoría."
+        }), 400
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()
+
+
+# PUT: actualizar un producto
+@app.route("/api/productos/<int:id_producto>", methods=["PUT"])
+def api_actualizar_producto(id_producto):
+    datos = request.get_json(silent=True)
+
+    if not isinstance(datos, dict):
+        return jsonify({"error": "Debes enviar un objeto JSON"}), 400
+
+    nombre = datos.get("nombre")
+    descripcion = datos.get("descripcion")
+    precio = datos.get("precio")
+    disponibilidad = datos.get("disponibilidad", 1)
+    id_categoria = datos.get("id_categoria")
+
+    if not nombre or precio is None or id_categoria is None:
+        return jsonify({
+            "error": "Los campos nombre, precio e id_categoria son obligatorios"
+        }), 400
+
+    try:
+        precio = float(precio)
+        id_categoria = int(id_categoria)
+        disponibilidad = int(disponibilidad)
+
+        if precio < 0:
+            return jsonify({"error": "El precio no puede ser negativo"}), 400
+
+        if disponibilidad not in (0, 1):
+            return jsonify({
+                "error": "La disponibilidad debe ser 0 o 1"
+            }), 400
+
+    except (ValueError, TypeError):
+        return jsonify({
+            "error": "Revisa el precio, la categoría y la disponibilidad"
+        }), 400
+
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute(
+            "SELECT id_producto FROM producto WHERE id_producto = %s",
+            (id_producto,)
+        )
+
+        if cursor.fetchone() is None:
+            return jsonify({"error": "Producto no encontrado"}), 404
+
+        cursor.execute("""
+            UPDATE producto
+            SET nombre = %s,
+                descripcion = %s,
+                precio = %s,
+                disponibilidad = %s,
+                id_categoria = %s
+            WHERE id_producto = %s
+        """, (
+            nombre,
+            descripcion,
+            precio,
+            disponibilidad,
+            id_categoria,
+            id_producto
+        ))
+
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Producto actualizado correctamente",
+            "id_producto": id_producto
+        }), 200
+
+    except Exception as error:
+        conexion.rollback()
+        print("Error al actualizar producto:", error)
+        return jsonify({
+            "error": "No se pudo actualizar el producto. Verifica los datos y la categoría."
+        }), 400
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()
+
+
+# DELETE: eliminar un producto
+@app.route("/api/productos/<int:id_producto>", methods=["DELETE"])
+def api_eliminar_producto(id_producto):
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            "DELETE FROM producto WHERE id_producto = %s",
+            (id_producto,)
+        )
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Producto no encontrado"}), 404
+
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Producto eliminado correctamente",
+            "id_producto": id_producto
+        }), 200
+
+    except Exception as error:
+        conexion.rollback()
+        print("Error al eliminar producto:", error)
+        return jsonify({
+            "error": "No se pudo eliminar el producto. Es posible que esté relacionado con un pedido."
+        }), 409
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conexion.close()
+# =====================================================
+# API REST - $$COCINA$$ FABIAN
+# =====================================================
+
+@app.route("/api/cocina", methods=["GET"])
+def listar_cocina():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id_cocina, nombre, usuario_login, estado
+            FROM cocina
+            ORDER BY id_cocina
+        """)
+        registros = cursor.fetchall()
+
+        return jsonify(registros), 200
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        cursor.close()
+        conexion.close()
+
+
+@app.route("/api/cocina/<int:id_cocina>", methods=["GET"])
+def consultar_cocina(id_cocina):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id_cocina, nombre, usuario_login, estado
+            FROM cocina
+            WHERE id_cocina = %s
+        """, (id_cocina,))
+
+        registro = cursor.fetchone()
+
+        if not registro:
+            return jsonify({"error": "Registro de cocina no encontrado"}), 404
+
+        return jsonify(registro), 200
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/cocina", methods=["POST"])
+def crear_cocina():
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Se requiere un JSON válido"}), 400
+
+    nombre = datos.get("nombre")
+    usuario_login = datos.get("usuario_login")
+    contrasena_hash = datos.get("contrasena_hash")
+    estado = datos.get("estado", 1)
+
+    if not nombre or not usuario_login or not contrasena_hash:
+        return jsonify({
+            "error": "Se requieren nombre, usuario_login y contrasena_hash"
+        }), 400
+
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("""
+            INSERT INTO cocina (nombre, usuario_login, contrasena_hash, estado)
+            VALUES (%s, %s, %s, %s)
+        """, (nombre, usuario_login, contrasena_hash, estado))
+
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Registro de cocina creado correctamente",
+            "id_cocina": cursor.lastrowid
+        }), 201
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/cocina/<int:id_cocina>", methods=["PUT"])
+def actualizar_cocina(id_cocina):
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Se requiere un JSON válido"}), 400
+
+    campos = {
+        "nombre": datos.get("nombre"),
+        "usuario_login": datos.get("usuario_login"),
+        "estado": datos.get("estado")
+    }
+
+    if any(valor is None for valor in campos.values()):
+        return jsonify({
+            "error": "Se requieren nombre, usuario_login y estado"
+        }), 400
+
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("""
+            UPDATE cocina
+            SET nombre = %s, usuario_login = %s, estado = %s
+            WHERE id_cocina = %s
+        """, (
+            campos["nombre"],
+            campos["usuario_login"],
+            campos["estado"],
+            id_cocina
+        ))
+
+        if cursor.rowcount == 0:
+            cursor.execute(
+                "SELECT id_cocina FROM cocina WHERE id_cocina = %s",
+                (id_cocina,)
+            )
+
+            if not cursor.fetchone():
+                return jsonify({"error": "Registro de cocina no encontrado"}), 404
+
+        conexion.commit()
+
+        # Actualizar la contraseña solo si se envía una nueva.
+        nueva_contrasena = datos.get("contrasena_hash")
+
+        if nueva_contrasena:
+            cursor.execute("""
+                UPDATE cocina
+                SET contrasena_hash = %s
+                WHERE id_cocina = %s
+            """, (nueva_contrasena, id_cocina))
+            conexion.commit()
+
+        return jsonify({"mensaje": "Registro de cocina actualizado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/cocina/<int:id_cocina>", methods=["DELETE"])
+def eliminar_cocina(id_cocina):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+        cursor.execute(
+            "DELETE FROM cocina WHERE id_cocina = %s",
+            (id_cocina,)
+        )
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Registro de cocina no encontrado"}), 404
+
+        conexion.commit()
+
+        return jsonify({"mensaje": "Registro de cocina eliminado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({
+            "error": "No se pudo eliminar el registro. Puede estar relacionado con otros datos.",
+            "detalle": str(error)
+        }), 409
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+        # =====================================================
+# API REST - $$ADMINISTRADORES$$ FABIAN
+# =====================================================
+
+@app.route("/api/administradores", methods=["GET"])
+def listar_administradores():
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id_administrador, nombre, usuario_login, estado
+            FROM administrador
+            ORDER BY id_administrador
+        """)
+        return jsonify(cursor.fetchall()), 200
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/administradores/<int:id_administrador>", methods=["GET"])
+def consultar_administrador(id_administrador):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id_administrador, nombre, usuario_login, estado
+            FROM administrador
+            WHERE id_administrador = %s
+        """, (id_administrador,))
+        administrador = cursor.fetchone()
+
+        if not administrador:
+            return jsonify({"error": "Administrador no encontrado"}), 404
+
+        return jsonify(administrador), 200
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/administradores", methods=["POST"])
+def crear_administrador():
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Se requiere un JSON válido"}), 400
+
+    nombre = datos.get("nombre")
+    usuario_login = datos.get("usuario_login")
+    contrasena_hash = datos.get("fabian02")
+    estado = datos.get("estado", 1)
+
+    if not nombre or not usuario_login or not contrasena_hash:
+        return jsonify({
+            "error": "Se requieren nombre, usuario_login y contrasena_hash"
+        }), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("""
+            INSERT INTO administrador
+                (nombre, usuario_login, contrasena_hash, estado)
+            VALUES (%s, %s, %s, %s)
+        """, (nombre, usuario_login, contrasena_hash, estado))
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Administrador creado correctamente",
+            "id_administrador": cursor.lastrowid
+        }), 201
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/administradores/<int:id_administrador>", methods=["PUT"])
+def actualizar_administrador(id_administrador):
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Se requiere un JSON válido"}), 400
+
+    nombre = datos.get("nombre")
+    usuario_login = datos.get("usuario_login")
+    estado = datos.get("estado")
+
+    if nombre is None or usuario_login is None or estado is None:
+        return jsonify({
+            "error": "Se requieren nombre, usuario_login y estado"
+        }), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("""
+            UPDATE administrador
+            SET nombre = %s, usuario_login = %s, estado = %s
+            WHERE id_administrador = %s
+        """, (nombre, usuario_login, estado, id_administrador))
+
+        if cursor.rowcount == 0:
+            cursor.execute(
+                "SELECT id_administrador FROM administrador WHERE id_administrador = %s",
+                (id_administrador,)
+            )
+            if not cursor.fetchone():
+                return jsonify({"error": "Administrador no encontrado"}), 404
+
+        nueva_contrasena = datos.get("contrasena_hash")
+        if nueva_contrasena:
+            cursor.execute("""
+                UPDATE administrador
+                SET contrasena_hash = %s
+                WHERE id_administrador = %s
+            """, (nueva_contrasena, id_administrador))
+
+        conexion.commit()
+        return jsonify({"mensaje": "Administrador actualizado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/administradores/<int:id_administrador>", methods=["DELETE"])
+def eliminar_administrador(id_administrador):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute(
+            "DELETE FROM administrador WHERE id_administrador = %s",
+            (id_administrador,)
+        )
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Administrador no encontrado"}), 404
+
+        conexion.commit()
+        return jsonify({"mensaje": "Administrador eliminado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({
+            "error": "No se pudo eliminar el administrador; puede tener restricciones relacionadas.",
+            "detalle": str(error)
+        }), 409
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+        # =====================================================
+# API REST - PAGOS
+# =====================================================
+
+@app.route("/api/pagos", methods=["GET"])
+@app.route("/api/pagos", methods=["GET"])
+def listar_pagos():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({
+            "error": "No se pudo conectar con la base de datos"
+        }), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+
+        cursor.execute("""
+            SELECT id_pago, id_pedido, id_cajero,
+                   metodo_pago, monto, fecha_pago
+            FROM pago
+            ORDER BY id_pago
+        """)
+
+        registros = cursor.fetchall()
+
+        return app.response_class(
+            response=__import__("json").dumps(registros, default=str),
+            status=200,
+            mimetype="application/json"
+        )
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        conexion.close()
+
+
+@app.route("/api/pagos/<int:id_pago>", methods=["GET"])
+def consultar_pago(id_pago):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id_pago, id_pedido, id_cajero, metodo_pago, monto, fecha_pago
+            FROM pago
+            WHERE id_pago = %s
+        """, (id_pago,))
+        pago = cursor.fetchone()
+
+        if not pago:
+            return jsonify({"error": "Pago no encontrado"}), 404
+
+        return app.response_class(
+    response=__import__("json").dumps(pago, default=str),
+    status=200,
+    mimetype="application/json"
+)
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/pagos", methods=["POST"])
+def crear_pago():
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Se requiere un JSON válido"}), 400
+
+    id_pedido = datos.get("id_pedido")
+    id_cajero = datos.get("id_cajero")
+    metodo_pago = datos.get("metodo_pago")
+    monto = datos.get("monto")
+
+    if id_pedido is None or id_cajero is None or not metodo_pago or monto is None:
+        return jsonify({
+            "error": "Se requieren id_pedido, id_cajero, metodo_pago y monto"
+        }), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("""
+            INSERT INTO pago (id_pedido, id_cajero, metodo_pago, monto)
+            VALUES (%s, %s, %s, %s)
+        """, (id_pedido, id_cajero, metodo_pago, monto))
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Pago registrado correctamente",
+            "id_pago": cursor.lastrowid
+        }), 201
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({
+            "error": "No se pudo registrar el pago. Verifica que existan el pedido y el cajero.",
+            "detalle": str(error)
+        }), 400
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/pagos/<int:id_pago>", methods=["PUT"])
+def actualizar_pago(id_pago):
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Se requiere un JSON válido"}), 400
+
+    id_pedido = datos.get("id_pedido")
+    id_cajero = datos.get("id_cajero")
+    metodo_pago = datos.get("metodo_pago")
+    monto = datos.get("monto")
+
+    if id_pedido is None or id_cajero is None or not metodo_pago or monto is None:
+        return jsonify({
+            "error": "Se requieren id_pedido, id_cajero, metodo_pago y monto"
+        }), 400
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("""
+            UPDATE pago
+            SET id_pedido = %s, id_cajero = %s, metodo_pago = %s, monto = %s
+            WHERE id_pago = %s
+        """, (id_pedido, id_cajero, metodo_pago, monto, id_pago))
+
+        if cursor.rowcount == 0:
+            cursor.execute("SELECT id_pago FROM pago WHERE id_pago = %s", (id_pago,))
+            if not cursor.fetchone():
+                return jsonify({"error": "Pago no encontrado"}), 404
+
+        conexion.commit()
+        return jsonify({"mensaje": "Pago actualizado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({
+            "error": "No se pudo actualizar el pago. Verifica los datos relacionados.",
+            "detalle": str(error)
+        }), 400
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/pagos/<int:id_pago>", methods=["DELETE"])
+def eliminar_pago(id_pago):
+    conexion = obtener_conexion()
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+    try:
+        cursor = conexion.cursor()
+        cursor.execute("DELETE FROM pago WHERE id_pago = %s", (id_pago,))
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Pago no encontrado"}), 404
+
+        conexion.commit()
+        return jsonify({"mensaje": "Pago eliminado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({
+            "error": "No se pudo eliminar el pago; puede estar relacionado con otros datos.",
+            "detalle": str(error)
+        }), 409
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+        
+# ==============================
+# API REST - $$$DETALLE DE PEDIDO$$$$ FABIAN
+
+# ==============================
+
+@app.route("/api/detalles-pedido", methods=["GET"])
+def listar_detalles_pedido():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+
+        cursor.execute("""
+            SELECT id_detalle, id_producto, cantidad,
+                   id_pedido, notas, precio_unitario
+            FROM detalle_pedido
+            ORDER BY id_detalle
+        """)
+
+        registros = cursor.fetchall()
+
+        return app.response_class(
+            response=__import__("json").dumps(registros, default=str),
+            status=200,
+            mimetype="application/json"
+        )
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/detalles-pedido/<int:id_detalle>", methods=["GET"])
+def consultar_detalle_pedido(id_detalle):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+
+        cursor.execute("""
+            SELECT id_detalle, id_producto, cantidad,
+                   id_pedido, notas, precio_unitario
+            FROM detalle_pedido
+            WHERE id_detalle = %s
+        """, (id_detalle,))
+
+        detalle = cursor.fetchone()
+
+        if detalle is None:
+            return jsonify({"error": "Detalle de pedido no encontrado"}), 404
+
+        return app.response_class(
+            response=__import__("json").dumps(detalle, default=str),
+            status=200,
+            mimetype="application/json"
+        )
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/detalles-pedido", methods=["POST"])
+def crear_detalle_pedido():
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Debes enviar los datos en formato JSON"}), 400
+
+    campos = ["id_producto", "cantidad", "id_pedido", "precio_unitario"]
+
+    if any(campo not in datos for campo in campos):
+        return jsonify({
+            "error": "Faltan campos obligatorios",
+            "campos_obligatorios": campos
+        }), 400
+
+    try:
+        cantidad = int(datos["cantidad"])
+        precio = float(datos["precio_unitario"])
+
+        if cantidad <= 0 or precio < 0:
+            return jsonify({
+                "error": "La cantidad debe ser mayor que cero y el precio no puede ser negativo"
+            }), 400
+
+        conexion = obtener_conexion()
+
+        if not conexion:
+            return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+        cursor = None
+
+        try:
+            cursor = conexion.cursor()
+
+            cursor.execute("""
+                INSERT INTO detalle_pedido
+                    (id_producto, cantidad, id_pedido, notas, precio_unitario)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                datos["id_producto"],
+                cantidad,
+                datos["id_pedido"],
+                datos.get("notas"),
+                precio
+            ))
+
+            conexion.commit()
+            nuevo_id = cursor.lastrowid
+
+            return jsonify({
+                "mensaje": "Detalle de pedido creado correctamente",
+                "id_detalle": nuevo_id
+            }), 201
+
+        except Exception:
+            conexion.rollback()
+            raise
+
+        finally:
+            if cursor:
+                cursor.close()
+            conexion.close()
+
+    except (ValueError, TypeError):
+        return jsonify({"error": "La cantidad y el precio deben ser numéricos"}), 400
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+
+@app.route("/api/detalles-pedido/<int:id_detalle>", methods=["PUT"])
+def actualizar_detalle_pedido(id_detalle):
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Debes enviar los datos en formato JSON"}), 400
+
+    campos = ["id_producto", "cantidad", "id_pedido", "precio_unitario"]
+
+    if any(campo not in datos for campo in campos):
+        return jsonify({
+            "error": "Faltan campos obligatorios",
+            "campos_obligatorios": campos
+        }), 400
+
+    try:
+        cantidad = int(datos["cantidad"])
+        precio = float(datos["precio_unitario"])
+
+        if cantidad <= 0 or precio < 0:
+            return jsonify({
+                "error": "La cantidad debe ser mayor que cero y el precio no puede ser negativo"
+            }), 400
+
+        conexion = obtener_conexion()
+
+        if not conexion:
+            return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+        cursor = None
+
+        try:
+            cursor = conexion.cursor()
+
+            cursor.execute("""
+                UPDATE detalle_pedido
+                SET id_producto = %s,
+                    cantidad = %s,
+                    id_pedido = %s,
+                    notas = %s,
+                    precio_unitario = %s
+                WHERE id_detalle = %s
+            """, (
+                datos["id_producto"],
+                cantidad,
+                datos["id_pedido"],
+                datos.get("notas"),
+                precio,
+                id_detalle
+            ))
+
+            if cursor.rowcount == 0:
+                cursor.execute(
+                    "SELECT id_detalle FROM detalle_pedido WHERE id_detalle = %s",
+                    (id_detalle,)
+                )
+
+                if cursor.fetchone() is None:
+                    return jsonify({"error": "Detalle de pedido no encontrado"}), 404
+
+            conexion.commit()
+
+            return jsonify({
+                "mensaje": "Detalle de pedido actualizado correctamente"
+            }), 200
+
+        except Exception:
+            conexion.rollback()
+            raise
+
+        finally:
+            if cursor:
+                cursor.close()
+            conexion.close()
+
+    except (ValueError, TypeError):
+        return jsonify({"error": "La cantidad y el precio deben ser numéricos"}), 400
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+
+@app.route("/api/detalles-pedido/<int:id_detalle>", methods=["DELETE"])
+def eliminar_detalle_pedido(id_detalle):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            "DELETE FROM detalle_pedido WHERE id_detalle = %s",
+            (id_detalle,)
+        )
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Detalle de pedido no encontrado"}), 404
+
+        conexion.commit()
+
+        return jsonify({
+            "mensaje": "Detalle de pedido eliminado correctamente"
+        }), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+# ==============================
+# API REST - $$$PEDIDOS$$$ FABIAN
+# ==============================
+
+@app.route("/api/pedidos", methods=["GET"])
+def listar_pedidos():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+
+        cursor.execute("""
+            SELECT id_pedido, tipo_pedido, id_mesa, direccion_entrega,
+                   id_mesero, estado, fecha_creacion,
+                   fecha_ultima_actualizacion
+            FROM pedido
+            ORDER BY id_pedido
+        """)
+
+        registros = cursor.fetchall()
+
+        return app.response_class(
+            response=__import__("json").dumps(registros, default=str),
+            status=200,
+            mimetype="application/json"
+        )
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/pedidos/<int:id_pedido>", methods=["GET"])
+def consultar_pedido(id_pedido):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True, buffered=True)
+
+        cursor.execute("""
+            SELECT id_pedido, tipo_pedido, id_mesa, direccion_entrega,
+                   id_mesero, estado, fecha_creacion,
+                   fecha_ultima_actualizacion
+            FROM pedido
+            WHERE id_pedido = %s
+        """, (id_pedido,))
+
+        pedido = cursor.fetchone()
+
+        if pedido is None:
+            return jsonify({"error": "Pedido no encontrado"}), 404
+
+        return app.response_class(
+            response=__import__("json").dumps(pedido, default=str),
+            status=200,
+            mimetype="application/json"
+        )
+
+    except Exception as error:
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/pedidos", methods=["POST"])
+def crear_pedido():
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Debes enviar los datos en formato JSON"}), 400
+
+    campos = ["tipo_pedido", "id_mesero"]
+
+    if any(campo not in datos for campo in campos):
+        return jsonify({
+            "error": "Faltan campos obligatorios",
+            "campos_obligatorios": campos
+        }), 400
+
+    tipo_pedido = datos["tipo_pedido"]
+
+    if tipo_pedido not in ["Mesa", "Domicilio", "Para llevar"]:
+        return jsonify({
+            "error": "Tipo de pedido no válido",
+            "tipos_permitidos": ["Mesa", "Domicilio", "Para llevar"]
+        }), 400
+
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+
+        cursor.execute("""
+            INSERT INTO pedido
+                (tipo_pedido, id_mesa, direccion_entrega, id_mesero, estado)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            tipo_pedido,
+            datos.get("id_mesa"),
+            datos.get("direccion_entrega"),
+            datos["id_mesero"],
+            datos.get("estado", "Pendiente")
+        ))
+
+        conexion.commit()
+        nuevo_id = cursor.lastrowid
+
+        return jsonify({
+            "mensaje": "Pedido creado correctamente",
+            "id_pedido": nuevo_id
+        }), 201
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/pedidos/<int:id_pedido>", methods=["PUT"])
+def actualizar_pedido(id_pedido):
+    datos = request.get_json(silent=True)
+
+    if not datos:
+        return jsonify({"error": "Debes enviar los datos en formato JSON"}), 400
+
+    campos = ["tipo_pedido", "id_mesero", "estado"]
+
+    if any(campo not in datos for campo in campos):
+        return jsonify({
+            "error": "Faltan campos obligatorios",
+            "campos_obligatorios": campos
+        }), 400
+
+    if datos["tipo_pedido"] not in ["Mesa", "Domicilio", "Para llevar"]:
+        return jsonify({"error": "Tipo de pedido no válido"}), 400
+
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(buffered=True)
+
+        cursor.execute("""
+            UPDATE pedido
+            SET tipo_pedido = %s,
+                id_mesa = %s,
+                direccion_entrega = %s,
+                id_mesero = %s,
+                estado = %s
+            WHERE id_pedido = %s
+        """, (
+            datos["tipo_pedido"],
+            datos.get("id_mesa"),
+            datos.get("direccion_entrega"),
+            datos["id_mesero"],
+            datos["estado"],
+            id_pedido
+        ))
+
+        if cursor.rowcount == 0:
+            cursor.execute(
+                "SELECT id_pedido FROM pedido WHERE id_pedido = %s",
+                (id_pedido,)
+            )
+
+            if cursor.fetchone() is None:
+                return jsonify({"error": "Pedido no encontrado"}), 404
+
+        conexion.commit()
+
+        return jsonify({"mensaje": "Pedido actualizado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/api/pedidos/<int:id_pedido>", methods=["DELETE"])
+def eliminar_pedido(id_pedido):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return jsonify({"error": "No se pudo conectar con la base de datos"}), 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(buffered=True)
+
+        cursor.execute(
+            "DELETE FROM pedido WHERE id_pedido = %s",
+            (id_pedido,)
+        )
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Pedido no encontrado"}), 404
+
+        conexion.commit()
+
+        return jsonify({"mensaje": "Pedido eliminado correctamente"}), 200
+
+    except Exception as error:
+        conexion.rollback()
+        return jsonify({"error": str(error)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
 
 if __name__ == "__main__":
     app.run(debug=True)
