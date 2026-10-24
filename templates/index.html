@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PoliRestaurante</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+        }
+
+        header {
+            background-color: #17365d;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .contenedor {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .tarjeta {
+            background: white;
+            padding: 30px 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: #17365d;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .tarjeta:hover {
+            transform: translateY(-5px);
+            background-color: #e8f0fe;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>PoliRestaurante</h1>
+        <p>Sistema de gestión del restaurante</p>
+    </header>
+
+    <main>
+        <h2>Panel de administración</h2>
+        <p>Selecciona el módulo que deseas gestionar.</p>
+
+        <div class="contenedor">
+            <a class="tarjeta" href="/clientes">👥 Clientes</a>
+            <a class="tarjeta" href="/reservas">📅 Reservas</a>
+            <a class="tarjeta" href="/inventario">📦 Inventario</a>
+            <a class="tarjeta" href="/movimientos">📋 Movimientos de inventario</a>
+            <a class="tarjeta" href="/mesas">🍽️ Mesas</a>
+        </div>
+    </main>
+</body>
+</html>

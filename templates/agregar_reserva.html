@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Reserva - PoliRestaurante</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+        }
+
+        header {
+            background: #17365d;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .contenedor {
+            max-width: 480px;
+            margin: 45px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            margin-top: 25px;
+            background: #17365d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #28558a;
+        }
+
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #17365d;
+            text-decoration: none;
+        }
+
+        .aviso {
+            color: #a45b00;
+            background: #fff4d6;
+            padding: 12px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>PoliRestaurante</h1>
+    <p>Registro de reservas</p>
+</header>
+
+<div class="contenedor">
+    <h2>Agregar nueva reserva</h2>
+
+    {% if not clientes or not mesas %}
+    <p class="aviso">
+        Para registrar una reserva necesitas al menos
+        un cliente y una mesa registrados.
+    </p>
+    {% endif %}
+
+    <form action="{{ url_for('agregar_reserva') }}" method="POST">
+
+        <label for="id_cliente">Cliente</label>
+        <select id="id_cliente" name="id_cliente" required>
+            <option value="">Selecciona un cliente</option>
+            {% for cliente in clientes %}
+            <option value="{{ cliente.id_cliente }}">
+                {{ cliente.nombre }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="id_mesa">Mesa</label>
+        <select id="id_mesa" name="id_mesa" required>
+            <option value="">Selecciona una mesa</option>
+            {% for mesa in mesas %}
+            <option value="{{ mesa.id_mesa }}">
+                Mesa {{ mesa.numero }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="fecha_reserva">Fecha y hora</label>
+        <input type="datetime-local"
+               id="fecha_reserva"
+               name="fecha_reserva"
+               required>
+
+        <label for="cantidad_personas">Cantidad de personas</label>
+        <input type="number"
+               id="cantidad_personas"
+               name="cantidad_personas"
+               min="1"
+               required>
+
+        <button type="submit"
+                {% if not clientes or not mesas %}disabled{% endif %}>
+            Guardar reserva
+        </button>
+    </form>
+
+    <a href="{{ url_for('listar_reservas') }}" class="volver">
+        ← Volver a reservas
+    </a>
+</div>
+
+</body>
+</html>
