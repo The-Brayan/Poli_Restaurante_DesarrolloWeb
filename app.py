@@ -3,6 +3,13 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 from conexion import obtener_conexion
 from decimal import Decimal, InvalidOperation
 from decimal import Decimal, InvalidOperation
+from crud_orm import (
+    crear_cliente as orm_crear_cliente,
+    listar_clientes as orm_listar_clientes,
+    actualizar_cliente as orm_actualizar_cliente,
+    eliminar_cliente as orm_eliminar_cliente
+)
+from crud_orm import listar_clientes as orm_listar_clientes
 
 app = Flask(__name__)
 
@@ -2844,6 +2851,79 @@ def api_eliminar_mesa(id_mesa):
     finally:
         cursor.close()
         conexion.close()
+
+
+        # ==========================================
+# API REST CON ORM - SQLALCHEMY
+# ==========================================
+
+# GET - Consultar clientes
+@app.route("/api/orm/clientes", methods=["GET"])
+def api_orm_listar_clientes():
+    clientes = orm_listar_clientes()
+    return jsonify(clientes), 200
+
+
+# POST - Crear cliente
+@app.route("/api/orm/clientes", methods=["POST"])
+def api_orm_crear_cliente():
+    datos = request.get_json(silent=True)
+
+    if not isinstance(datos, dict):
+        return jsonify({"error": "Debes enviar un JSON válido"}), 400
+
+    nombre = datos.get("nombre")
+
+    if not isinstance(nombre, str) or not nombre.strip():
+        return jsonify({"error": "El nombre es obligatorio"}), 400
+
+    nuevo_id = orm_crear_cliente(
+        nombre.strip(),
+        datos.get("telefono"),
+        datos.get("correo")
+    )
+
+    return jsonify({
+        "mensaje": "Cliente creado con ORM",
+        "id_cliente": nuevo_id
+    }), 201
+
+
+# PUT - Actualizar cliente
+@app.route("/api/orm/clientes/<int:id_cliente>", methods=["PUT"])
+def api_orm_actualizar_cliente(id_cliente):
+    datos = request.get_json(silent=True)
+
+    if not isinstance(datos, dict):
+        return jsonify({"error": "Debes enviar un JSON válido"}), 400
+
+    nombre = datos.get("nombre")
+
+    if not isinstance(nombre, str) or not nombre.strip():
+        return jsonify({"error": "El nombre es obligatorio"}), 400
+
+    actualizado = orm_actualizar_cliente(
+        id_cliente,
+        nombre.strip(),
+        datos.get("telefono"),
+        datos.get("correo")
+    )
+
+    if not actualizado:
+        return jsonify({"error": "Cliente no encontrado"}), 404
+
+    return jsonify({"mensaje": "Cliente actualizado con ORM"}), 200
+
+
+# DELETE - Eliminar cliente
+@app.route("/api/orm/clientes/<int:id_cliente>", methods=["DELETE"])
+def api_orm_eliminar_cliente(id_cliente):
+    eliminado = orm_eliminar_cliente(id_cliente)
+
+    if not eliminado:
+        return jsonify({"error": "Cliente no encontrado"}), 404
+
+    return jsonify({"mensaje": "Cliente eliminado con ORM"}), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
