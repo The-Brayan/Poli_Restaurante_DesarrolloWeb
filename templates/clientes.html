@@ -63,7 +63,17 @@
 
     <h2>Clientes registrados</h2>
 
-    <table>
+<a href="{{ url_for('agregar_cliente') }}"
+   style="display: inline-block;
+          background: #28a745;
+          color: white;
+          padding: 12px 20px;
+          border-radius: 6px;
+          text-decoration: none;
+          font-weight: bold;
+          margin-bottom: 20px;">
+    ➕ Agregar cliente
+</a>
        
 <table>
     <thead>
@@ -117,7 +127,7 @@
     </tbody>
 </table>
 
-    </table>
+
 </main>
 
 </body>
