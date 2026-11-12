@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas - PoliRestaurante</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+        }
+
+        header {
+            background: #17365d;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #17365d;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #17365d;
+            color: white;
+        }
+
+        .volver {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #17365d;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Gestión de Reservas</h1>
+    <p>PoliRestaurante</p>
+</header>
+
+<main>
+    <a href="/" class="volver">← Volver al inicio</a>
+
+    <h2>Reservas registradas</h2>
+
+    <table>
+        
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Mesa</th>
+            <th>Fecha y hora</th>
+            <th>Personas</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for reserva in reservas %}
+        <tr>
+            <td>{{ reserva.id_reserva }}</td>
+            <td>{{ reserva.cliente }}</td>
+            <td>{{ reserva.mesa }}</td>
+            <td>{{ reserva.fecha_reserva }}</td>
+            <td>{{ reserva.cantidad_personas }}</td>
+            <td>{{ reserva.estado }}</td>
+
+            <td>
+                <a href="{{ url_for('editar_reserva', id_reserva=reserva.id_reserva) }}"
+                   style="display: inline-block;
+                          background: #ffc107;
+                          color: black;
+                          padding: 8px 12px;
+                          border-radius: 5px;
+                          text-decoration: none;">
+                    ✏️ Editar
+                </a>
+
+                <form action="{{ url_for('eliminar_reserva', id_reserva=reserva.id_reserva) }}"
+                      method="POST"
+                      style="display: inline-block;"
+                      onsubmit="return confirm('¿Estás seguro de eliminar esta reserva?');">
+
+                    <button type="submit"
+                            style="background: #dc3545;
+                                   color: white;
+                                   padding: 8px 12px;
+                                   border: none;
+                                   border-radius: 5px;
+                                   cursor: pointer;">
+                        🗑️ Eliminar
+                    </button>
+                </form>
+            </td>
+        </tr>
+
+        {% else %}
+        <tr>
+            <td colspan="7">No hay reservas registradas.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+    </table>
+</main>
+
+</body>
+</html>

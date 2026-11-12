@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cajeros - PoliRestaurante</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+        }
+        header {
+            background: #17365d;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .contenedor {
+            max-width: 1000px;
+            margin: 35px auto;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+        }
+        h2 { color: #17365d; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th { background: #17365d; color: white; }
+        .boton {
+            display: inline-block;
+            padding: 10px 14px;
+            margin: 4px;
+            background: #17365d;
+            color: white;
+            text-decoration: none;
+            border: 0;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .volver { color: #17365d; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>PoliRestaurante</h1>
+    <p>Administración de cajeros</p>
+</header>
+
+<div class="contenedor">
+    <h2>Lista de cajeros</h2>
+
+    <a class="boton" href="{{ url_for('agregar_cajero') }}">
+        + Agregar cajero
+    </a>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Usuario</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for cajero in cajeros %}
+            <tr>
+                <td>{{ cajero.id_cajero }}</td>
+                <td>{{ cajero.nombre }}</td>
+                <td>{{ cajero.usuario_login }}</td>
+                <td>{{ cajero.estado }}</td>
+                <td>
+                    <a class="boton"
+                       href="{{ url_for('editar_cajero',
+                       id_cajero=cajero.id_cajero) }}">
+                        Editar
+                    </a>
+
+                    <form action="{{ url_for('eliminar_cajero',
+                    id_cajero=cajero.id_cajero) }}"
+                    method="POST" style="display:inline"
+                    onsubmit="return confirm('¿Eliminar este cajero?');">
+                        <button class="boton" type="submit">
+                            Eliminar
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="5">No hay cajeros registrados.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <p><a class="volver" href="{{ url_for('index') }}">
+        ← Volver al inicio
+    </a></p>
+</div>
+</body>
+</html>
