@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Movimiento - PoliRestaurante</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+        }
+
+        header {
+            background: #17365d;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .contenedor {
+            max-width: 480px;
+            margin: 45px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #17365d;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            margin-top: 25px;
+            background: #17365d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #28558a;
+        }
+
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #17365d;
+            text-decoration: none;
+        }
+
+        .aviso {
+            background: #fff3cd;
+            color: #664d03;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>PoliRestaurante</h1>
+    <p>Control de inventario</p>
+</header>
+
+<div class="contenedor">
+
+    <h2>Registrar movimiento</h2>
+
+    {% if insumos %}
+
+    <form action="{{ url_for('agregar_movimiento') }}" method="POST">
+
+        <label for="id_inventario">Seleccionar insumo</label>
+        <select id="id_inventario" name="id_inventario" required>
+            <option value="">Selecciona un insumo</option>
+
+            {% for insumo in insumos %}
+            <option value="{{ insumo.id_inventario }}">
+                {{ insumo.nombre_insumo }}
+                ({{ insumo.cantidad }} {{ insumo.unidad_medida }})
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="tipo_movimiento">Tipo de movimiento</label>
+        <select id="tipo_movimiento" name="tipo_movimiento" required>
+            <option value="">Selecciona el tipo</option>
+            <option value="Entrada">Entrada</option>
+            <option value="Salida">Salida</option>
+        </select>
+
+        <label for="cantidad">Cantidad</label>
+        <input type="number"
+               id="cantidad"
+               name="cantidad"
+               min="0.01"
+               step="0.01"
+               placeholder="Ejemplo: 10"
+               required>
+
+        <label for="motivo">Motivo</label>
+        <textarea id="motivo"
+                  name="motivo"
+                  rows="3"
+                  maxlength="255"
+                  placeholder="Ejemplo: Compra de insumos"></textarea>
+
+        <button type="submit">Guardar movimiento</button>
+    </form>
+
+    {% else %}
+
+    <div class="aviso">
+        No hay insumos registrados. Primero debes agregar
+        un insumo al inventario.
+    </div>
+
+    <a href="{{ url_for('agregar_insumo') }}" class="volver">
+        + Agregar insumo
+    </a>
+
+    {% endif %}
+
+    <a href="{{ url_for('listar_movimientos') }}" class="volver">
+        ← Volver a movimientos
+    </a>
+
+</div>
+
+</body>
+</html>

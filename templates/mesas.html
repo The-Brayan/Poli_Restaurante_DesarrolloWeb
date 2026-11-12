@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Mesas - PoliRestaurante</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+        }
+
+        header {
+            background: #17365d;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .contenedor {
+            max-width: 900px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #17365d;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+        }
+
+        th, td {
+            padding: 14px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background: #17365d;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+
+        .libre {
+            color: #198754;
+            font-weight: bold;
+        }
+
+        .ocupada {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .reservada {
+            color: #d97706;
+            font-weight: bold;
+        }
+
+        .volver {
+            display: inline-block;
+            margin-top: 25px;
+            color: #17365d;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+.btn-editar {
+    display: inline-block;
+    padding: 8px 12px;
+    background-color: #f0ad4e;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    margin: 3px;
+    font-size: 14px;
+}
+
+.btn-editar:hover {
+    background-color: #d99532;
+}
+
+.btn-eliminar {
+    padding: 8px 12px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 3px;
+    font-size: 14px;
+}
+
+.btn-eliminar:hover {
+    background-color: #b52a37;
+}
+
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>PoliRestaurante</h1>
+    <p>Administración de mesas</p>
+</header>
+
+<div class="contenedor">
+
+    <h2>Gestión de Mesas</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Número de mesa</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            
+<tbody>
+    {% for mesa in mesas %}
+    <tr>
+        <td>{{ mesa.id_mesa }}</td>
+
+        <td>Mesa {{ mesa.numero }}</td>
+
+        <!-- Estado de la mesa -->
+        <td>
+            {% if mesa.estado == 'Libre' %}
+                <span class="libre">Libre</span>
+            {% elif mesa.estado == 'Ocupada' %}
+                <span class="ocupada">Ocupada</span>
+            {% elif mesa.estado == 'Reservada' %}
+                <span class="reservada">Reservada</span>
+            {% else %}
+                {{ mesa.estado }}
+            {% endif %}
+        </td>
+
+        <!-- Botones de acciones -->
+        <td>
+            <a href="{{ url_for('editar_mesa', id_mesa=mesa.id_mesa) }}"
+               class="btn-editar">
+                ✏️ Editar
+            </a>
+
+            <form
+                action="{{ url_for('eliminar_mesa', id_mesa=mesa.id_mesa) }}"
+                method="POST"
+                style="display: inline;"
+                onsubmit="return confirm('¿Estás seguro de eliminar la Mesa {{ mesa.numero }}?');"
+            >
+                <button type="submit" class="btn-eliminar">
+                    🗑️ Eliminar
+                </button>
+            </form>
+        </td>
+    </tr>
+
+    {% else %}
+    <tr>
+        <td colspan="4">
+            No hay mesas registradas.
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+
+        </tbody>
+    </table>
+
+    <a href="{{ url_for('inicio') }}" class="volver">
+        ← Volver al inicio
+    </a>
+
+</div>
+
+</body>
+</html>
