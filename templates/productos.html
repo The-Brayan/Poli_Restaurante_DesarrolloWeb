@@ -1,0 +1,272 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de productos</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+            color: #333;
+        }
+
+        .contenedor {
+            max-width: 1100px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px #00000015;
+        }
+
+        h1 {
+            color: #263238;
+        }
+
+        .acciones {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            gap: 10px;
+        }
+
+        button, .boton {
+            border: none;
+            padding: 10px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .agregar { background: #198754; }
+        .editar { background: #0d6efd; }
+        .eliminar { background: #dc3545; }
+        .volver { background: #6c757d; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #263238;
+            color: white;
+        }
+
+        tr:hover {
+            background: #f1f1f1;
+        }
+
+        #mensaje {
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .tabla-contenedor {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="contenedor">
+
+        <h1>Gestión de productos</h1>
+        <p>Consulta y administra los productos registrados en el restaurante.</p>
+
+        <div class="acciones">
+            <a href="/productos/agregar" class="boton agregar">
+                + Agregar producto
+            </a>
+
+            <a href="/" class="boton volver">
+                Volver al inicio
+            </a>
+        </div>
+
+        <div id="mensaje"></div>
+
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Disponibilidad</th>
+                        <th>Categoría</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tablaProductos">
+                    <tr>
+                        <td colspan="7">Cargando productos...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script>
+        const tabla = document.getElementById("tablaProductos");
+        const mensaje = document.getElementById("mensaje");
+
+        async function cargarProductos() {
+            try {
+                const respuesta = await fetch("/api/productos");
+                const datos = await respuesta.json();
+
+                if (!respuesta.ok) {
+                    throw new Error(datos.error || "No se pudieron consultar los productos");
+                }
+
+                const productos = Array.isArray(datos)
+                    ? datos
+                    : (datos.productos || datos.data || []);
+
+                tabla.innerHTML = "";
+
+                if (productos.length === 0) {
+                    tabla.innerHTML = `
+                        <tr>
+                            <td colspan="7">No hay productos registrados.</td>
+                        </tr>`;
+                    return;
+                }
+
+                productos.forEach(producto => {
+                    const fila = document.createElement("tr");
+
+                    const valores = [
+                        producto.id_producto,
+                        producto.nombre,
+                        producto.descripcion,
+                        producto.precio,
+                        producto.disponibilidad,
+                        producto.nombre_categoria || producto.id_categoria
+                    ];
+
+                    valores.forEach(valor => {
+                        const celda = document.createElement("td");
+                        celda.textContent = valor ?? "";
+                        fila.appendChild(celda);
+                    });
+
+                    const acciones = document.createElement("td");
+
+                    const botonEditar = document.createElement("button");
+                    botonEditar.textContent = "Editar";
+                    botonEditar.className = "editar";
+                    botonEditar.onclick = () => editarProducto(producto);
+
+                    const botonEliminar = document.createElement("button");
+                    botonEliminar.textContent = "Eliminar";
+                    botonEliminar.className = "eliminar";
+                    botonEliminar.onclick = () => eliminarProducto(producto.id_producto);
+
+                    acciones.appendChild(botonEditar);
+                    acciones.appendChild(document.createTextNode(" "));
+                    acciones.appendChild(botonEliminar);
+
+                    fila.appendChild(acciones);
+                    tabla.appendChild(fila);
+                });
+
+            } catch (error) {
+                tabla.innerHTML = `
+                    <tr>
+                        <td colspan="7">Error al cargar los productos.</td>
+                    </tr>`;
+                mensaje.textContent = error.message;
+            }
+        }
+
+        async function editarProducto(producto) {
+            const nombre = prompt("Nombre del producto:", producto.nombre);
+            if (nombre === null) return;
+
+            const descripcion = prompt("Descripción:", producto.descripcion || "");
+            if (descripcion === null) return;
+
+            const precio = prompt("Precio:", producto.precio);
+            if (precio === null) return;
+
+            const disponibilidad = prompt(
+                "Disponibilidad (1 = disponible, 0 = no disponible):",
+                producto.disponibilidad
+            );
+            if (disponibilidad === null) return;
+
+            const id_categoria = prompt("ID de la categoría:", producto.id_categoria);
+            if (id_categoria === null) return;
+
+            try {
+                const respuesta = await fetch(`/api/productos/${producto.id_producto}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        nombre,
+                        descripcion,
+                        precio: Number(precio),
+                        disponibilidad: Number(disponibilidad),
+                        id_categoria: Number(id_categoria)
+                    })
+                });
+
+                const resultado = await respuesta.json();
+
+                if (!respuesta.ok) {
+                    throw new Error(resultado.error || resultado.mensaje || "No se pudo actualizar");
+                }
+
+                mensaje.textContent = "Producto actualizado correctamente.";
+                cargarProductos();
+
+            } catch (error) {
+                mensaje.textContent = error.message;
+            }
+        }
+
+        async function eliminarProducto(id) {
+            if (!confirm("¿Estás seguro de eliminar este producto?")) return;
+
+            try {
+                const respuesta = await fetch(`/api/productos/${id}`, {
+                    method: "DELETE"
+                });
+
+                const resultado = await respuesta.json();
+
+                if (!respuesta.ok) {
+                    throw new Error(resultado.error || resultado.mensaje || "No se pudo eliminar");
+                }
+
+                mensaje.textContent = "Producto eliminado correctamente.";
+                cargarProductos();
+
+            } catch (error) {
+                mensaje.textContent = error.message;
+            }
+        }
+
+        cargarProductos();
+    </script>
+</body>
+</html>

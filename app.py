@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from conexion import obtener_conexion
 from datetime import date, datetime
@@ -35,7 +35,7 @@ def listar_clientes():
         try:
             cursor.execute("SELECT * FROM cliente")
             clientes = cursor.fetchall()
-        finally:
+        finally: 
             cursor.close()
             conexion.close()
 
@@ -3511,7 +3511,7 @@ def crear_administrador():
 
     nombre = datos.get("nombre")
     usuario_login = datos.get("usuario_login")
-    contrasena_hash = datos.get("fabian02")
+    contrasena_hash = datos.get("contrasena_hash")
     estado = datos.get("estado", 1)
 
     if not nombre or not usuario_login or not contrasena_hash:
@@ -4112,6 +4112,7 @@ def eliminar_detalle_pedido(id_detalle):
 
 # ==============================
 # API REST - $$$PEDIDOS$$$ FABIAN
+
 # ==============================
 
 @app.route("/api/pedidos", methods=["GET"])
@@ -5007,5 +5008,27 @@ def eliminar_mesero(id_mesero):
 
 
 
+
+@app.route("/productos")
+def productos_web():
+    return render_template("productos.html")
+
+
+@app.route("/productos/agregar")
+def agregar_producto_web():
+    return render_template("agregar_producto.html")
+
+
+@app.route("/cocina")
+def cocina_web():
+    return render_template("cocina.html")
+
+
+@app.route("/administradores")
+def administradores_web():
+    return render_template("administradores.html")
+
+    
+>>>>>>> Agregar CRUD de productos, cocina y administradores
 if __name__ == "__main__":
     app.run(debug=True)
