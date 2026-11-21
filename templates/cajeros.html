@@ -86,7 +86,7 @@
                         Editar
                     </a>
 
-                    <form action="{{ url_for('eliminar_cajero',
+                    <form action="{{ url_for('eliminar_cajero_web',
                     id_cajero=cajero.id_cajero) }}"
                     method="POST" style="display:inline"
                     onsubmit="return confirm('¿Eliminar este cajero?');">
@@ -104,7 +104,8 @@
         </tbody>
     </table>
 
-    <p><a class="volver" href="{{ url_for('index') }}">
+    <p><a class="volver" href="{{ url_for('inicio') }}"
+>
         ← Volver al inicio
     </a></p>
 </div>

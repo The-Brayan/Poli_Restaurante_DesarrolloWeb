@@ -54,6 +54,18 @@
 <div class="contenedor">
     <h2>Historial de cambios</h2>
 
+    <a href="{{ url_for('agregar_historial_estado_web') }}"
+    style="display: inline-block;
+            padding: 12px 18px;
+            background: #17365d;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;">
+        + Agregar historial
+    </a>
+
+
     <table>
         <thead>
             <tr>
@@ -63,6 +75,7 @@
                 <th>Fecha</th>
                 <th>Rol usuario</th>
                 <th>ID usuario</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -74,10 +87,43 @@
                 <td>{{ registro.fecha }}</td>
                 <td>{{ registro.rol_usuario_cambio }}</td>
                 <td>{{ registro.id_usuario_cambio }}</td>
+               
+<td style="white-space: nowrap;">
+
+    <a href="{{ url_for('editar_historial_estado_web', id_historial=registro.id_historial) }}"
+       style="display: inline-block;
+              padding: 10px 15px;
+              background: #17365d;
+              color: white;
+              border-radius: 7px;
+              text-decoration: none;">
+        Editar
+    </a>
+
+    <form method="POST"
+          action="{{ url_for('eliminar_historial_estado_web', id_historial=registro.id_historial) }}"
+          style="display: inline-block;"
+          onsubmit="return confirm('¿Seguro que deseas eliminar este registro de historial?');">
+
+        <button type="submit"
+                style="background: #dc2626;
+                       color: white;
+                       padding: 10px 15px;
+                       border: none;
+                       border-radius: 7px;
+                       cursor: pointer;">
+            Eliminar
+        </button>
+
+    </form>
+
+</td>
+
+
             </tr>
         {% else %}
             <tr>
-                <td colspan="6">
+                <td colspan="7">
                     No hay cambios de estado registrados.
                 </td>
             </tr>
@@ -85,7 +131,7 @@
         </tbody>
     </table>
 
-    <a class="volver" href="{{ url_for('index') }}">
+    <a class="volver" href="{{ url_for('inicio') }}">
         ← Volver al inicio
     </a>
 </div>

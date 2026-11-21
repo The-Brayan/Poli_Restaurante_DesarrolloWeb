@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Editar Cajero - PoliRestaurante</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #243247;
+        }
+
+        header {
+            background: #17365d;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        header h1 {
+            margin: 0 0 10px;
+            font-size: 30px;
+        }
+
+        header p {
+            margin: 0;
+            color: #dbe7f5;
+        }
+
+        .contenedor {
+            max-width: 550px;
+            margin: 45px auto;
+            padding: 35px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.09);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #17365d;
+            font-size: 25px;
+        }
+
+        .descripcion {
+            color: #64748b;
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            background: white;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .boton {
+            display: block;
+            width: 100%;
+            margin-top: 30px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #17365d;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .boton:hover {
+            background: #24548c;
+        }
+
+        .volver {
+            display: block;
+            margin-top: 22px;
+            text-align: center;
+            color: #17365d;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .volver:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .contenedor {
+                margin: 20px 15px;
+                padding: 25px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>PoliRestaurante</h1>
+        <p>Sistema de administración de cajeros</p>
+    </header>
+
+    <main class="contenedor">
+
+        <h2>Editar cajero</h2>
+
+        <p class="descripcion">
+            Actualiza la información del cajero
+            y guarda los cambios.
+        </p>
+
+        <form method="POST">
+
+            <label for="nombre">Nombre completo</label>
+            <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                value="{{ cajero.nombre }}"
+                required
+            >
+
+            <label for="usuario_login">
+                Usuario de inicio de sesión
+            </label>
+            <input
+                type="text"
+                id="usuario_login"
+                name="usuario_login"
+                value="{{ cajero.usuario_login }}"
+                required
+            >
+
+            <label for="estado">Estado del cajero</label>
+            <select id="estado" name="estado" required>
+
+                <option value="1"
+                    {% if cajero.estado|int == 1 %}
+                        selected
+                    {% endif %}>
+                    Activo
+                </option>
+
+                <option value="0"
+                    {% if cajero.estado|int == 0 %}
+                        selected
+                    {% endif %}>
+                    Inactivo
+                </option>
+
+            </select>
+
+            <button class="boton" type="submit">
+                Guardar cambios
+            </button>
+
+        </form>
+
+        <a class="volver"
+           href="{{ url_for('cajeros_web') }}">
+            ← Volver a Cajeros
+        </a>
+
+    </main>
+
+</body>
+</html>
