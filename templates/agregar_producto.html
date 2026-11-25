@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Producto | PoliRestaurante</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 15px;
+            font-family: Arial, sans-serif;
+            background: #f0f4f8;
+            color: #243447;
+        }
+
+        .contenedor {
+            max-width: 520px;
+            margin: 30px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.10);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #1769aa;
+            text-align: center;
+        }
+
+        .subtitulo {
+            margin-bottom: 25px;
+            color: #667788;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-top: 17px;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccd5df;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .boton {
+            display: block;
+            width: 100%;
+            margin-top: 24px;
+            padding: 13px;
+            border: none;
+            border-radius: 6px;
+            background: #1769aa;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .boton:hover {
+            background: #10548a;
+        }
+
+        .volver {
+            display: block;
+            margin-top: 18px;
+            color: #1769aa;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        #mensaje {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="contenedor">
+        <h1>Agregar producto</h1>
+        <p class="subtitulo">Registro de productos de PoliRestaurante</p>
+
+        <form id="formProducto">
+            <label for="nombre">Nombre del producto</label>
+            <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                maxlength="100"
+                required
+            >
+
+            <label for="descripcion">Descripción</label>
+            <textarea
+                id="descripcion"
+                name="descripcion"
+                maxlength="255"
+            ></textarea>
+
+            <label for="precio">Precio</label>
+            <input
+                type="number"
+                id="precio"
+                name="precio"
+                min="0.01"
+                step="0.01"
+                required
+            >
+
+            <label for="id_categoria">Categoría</label>
+            <select id="id_categoria" name="id_categoria" required>
+                <option value="">Selecciona una categoría</option>
+                <option value="5">Bebidas</option>
+                <option value="6">Comidas Rápidas</option>
+                <option value="7">Postres Dulces</option>
+                <option value="10">Ensaladas</option>
+                <option value="11">Adiciones</option>
+            </select>
+
+            <label for="disponibilidad">Disponibilidad</label>
+            <select id="disponibilidad" name="disponibilidad" required>
+                <option value="1">Disponible</option>
+                <option value="0">No disponible</option>
+            </select>
+
+            <button class="boton" type="submit">Guardar producto</button>
+            <div id="mensaje" role="status"></div>
+        </form>
+
+        <a class="volver" href="/">Volver al inicio</a>
+    </main>
+
+    <script>
+        const formulario = document.getElementById("formProducto");
+        const mensaje = document.getElementById("mensaje");
+
+        formulario.addEventListener("submit", async function(evento) {
+            evento.preventDefault();
+
+            const datos = {
+                nombre: document.getElementById("nombre").value.trim(),
+                descripcion: document.getElementById("descripcion").value.trim(),
+                precio: Number(document.getElementById("precio").value),
+                id_categoria: Number(document.getElementById("id_categoria").value),
+                disponibilidad: Number(document.getElementById("disponibilidad").value)
+            };
+
+            if (!datos.nombre || !datos.id_categoria || datos.precio <= 0) {
+                mensaje.textContent = "Revisa los datos del producto.";
+                return;
+            }
+
+            mensaje.textContent = "Guardando producto...";
+
+            try {
+                const respuesta = await fetch("/api/productos", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(datos)
+                });
+
+                const resultado = await respuesta.json();
+
+                if (!respuesta.ok) {
+                    throw new Error(resultado.error || "No se pudo guardar el producto.");
+                }
+
+                mensaje.textContent = "¡Producto registrado correctamente!";
+                formulario.reset();
+
+            } catch (error) {
+                mensaje.textContent = error.message;
+            }
+        });
+    </script>
+</body>
+</html>

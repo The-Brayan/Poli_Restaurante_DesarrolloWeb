@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from conexion import obtener_conexion
 from datetime import date, datetime
@@ -11,6 +11,7 @@ from crud_orm import (
     eliminar_cliente as orm_eliminar_cliente
 )
 from crud_orm import listar_clientes as orm_listar_clientes
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 
@@ -35,7 +36,7 @@ def listar_clientes():
         try:
             cursor.execute("SELECT * FROM cliente")
             clientes = cursor.fetchall()
-        finally:
+        finally: 
             cursor.close()
             conexion.close()
 
@@ -3511,7 +3512,7 @@ def crear_administrador():
 
     nombre = datos.get("nombre")
     usuario_login = datos.get("usuario_login")
-    contrasena_hash = datos.get("fabian02")
+    contrasena_hash = datos.get("contrasena_hash")
     estado = datos.get("estado", 1)
 
     if not nombre or not usuario_login or not contrasena_hash:
@@ -3641,7 +3642,6 @@ def eliminar_administrador(id_administrador):
 # API REST - PAGOS
 # =====================================================
 
-@app.route("/api/pagos", methods=["GET"])
 @app.route("/api/pagos", methods=["GET"])
 def listar_pagos():
     conexion = obtener_conexion()
@@ -4112,6 +4112,7 @@ def eliminar_detalle_pedido(id_detalle):
 
 # ==============================
 # API REST - $$$PEDIDOS$$$ FABIAN
+
 # ==============================
 
 @app.route("/api/pedidos", methods=["GET"])
@@ -4970,6 +4971,38 @@ def eliminar_cajero(id_cajero):
         "cajero", "id_cajero", id_cajero
     )
 
+@app.route("/cajeros/eliminar/<int:id_cajero>", methods=["POST"])
+def eliminar_cajero_web(id_cajero):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = conexion.cursor()
+
+    try:
+        cursor.execute(
+            "DELETE FROM cajero WHERE id_cajero = %s",
+            (id_cajero,)
+        )
+
+        if cursor.rowcount == 0:
+            conexion.rollback()
+            return "Cajero no encontrado", 404
+
+        conexion.commit()
+
+        return redirect(url_for("cajeros_web"))
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception("Error al eliminar cajero")
+        return "No se pudo eliminar el cajero", 500
+
+    finally:
+        cursor.close()
+        conexion.close()
+
 
 # ==========================================
 # CRUD MESERO BRAYAN
@@ -5005,6 +5038,1113 @@ def eliminar_mesero(id_mesero):
         "mesero", "id_mesero", id_mesero
     )
 
+
+
+
+@app.route("/productos")
+def productos_web():
+    return render_template("productos.html")
+
+
+
+@app.route("/categorias")
+def categorias_web():
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        return "Error: No se pudo conectar con MySQL", 500
+
+    cursor = conexion.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            "SELECT id_categoria, nombre FROM categoria ORDER BY id_categoria"
+        )
+        categorias = cursor.fetchall()
+    finally:
+        cursor.close()
+        conexion.close()
+
+    return render_template("categorias.html", categorias=categorias)
+
+
+
+@app.route("/categorias/agregar", methods=["GET", "POST"])
+def agregar_categoria():
+
+    if request.method == "POST":
+        nombre = request.form.get("nombre", "").strip()
+
+        if not nombre:
+            return "El nombre de la categoría es obligatorio", 400
+
+        conexion = obtener_conexion()
+
+        if conexion is None:
+            return "Error: No se pudo conectar con MySQL", 500
+
+        cursor = conexion.cursor()
+
+        try:
+            cursor.execute(
+                "INSERT INTO categoria (nombre) VALUES (%s)",
+                (nombre,)
+            )
+            conexion.commit()
+
+        except Exception:
+            conexion.rollback()
+            raise
+
+        finally:
+            cursor.close()
+            conexion.close()
+
+        return redirect(url_for("categorias_web"))
+
+    return render_template("agregar_categoria.html")
+
+
+
+@app.route("/categorias/editar/<int:id_categoria>", methods=["GET", "POST"])
+def editar_categoria_web(id_categoria):
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        return "Error: No se pudo conectar con MySQL", 500
+
+    cursor = conexion.cursor(dictionary=True)
+
+    try:
+        if request.method == "POST":
+            nombre = request.form.get("nombre", "").strip()
+
+            if not nombre:
+                return "El nombre de la categoría es obligatorio", 400
+
+            cursor.execute(
+                "UPDATE categoria SET nombre = %s WHERE id_categoria = %s",
+                (nombre, id_categoria)
+            )
+            conexion.commit()
+
+            return redirect(url_for("categorias_web"))
+
+        cursor.execute(
+            "SELECT id_categoria, nombre FROM categoria WHERE id_categoria = %s",
+            (id_categoria,)
+        )
+        categoria = cursor.fetchone()
+
+        if categoria is None:
+            return "Categoría no encontrada", 404
+
+        return render_template("editar_categoria.html", categoria=categoria)
+
+    finally:
+        cursor.close()
+        conexion.close()
+
+
+@app.route("/categorias/eliminar/<int:id_categoria>", methods=["POST"])
+def eliminar_categoria_web(id_categoria):
+    conexion = obtener_conexion()
+
+    if conexion is None:
+        return "Error: No se pudo conectar con MySQL", 500
+
+    cursor = conexion.cursor()
+
+    try:
+        cursor.execute(
+            "DELETE FROM categoria WHERE id_categoria = %s",
+            (id_categoria,)
+        )
+        conexion.commit()
+
+    except mysql.connector.IntegrityError:
+        conexion.rollback()
+        return "No se puede eliminar una categoría que tiene productos asociados", 409
+
+    finally:
+        cursor.close()
+        conexion.close()
+
+    return redirect(url_for("categorias_web"))
+
+
+
+@app.route("/cajeros", methods=["GET"])
+def cajeros_web():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = conexion.cursor(dictionary=True)
+
+    try:
+        cursor.execute("""
+            SELECT id_cajero, nombre, usuario_login, estado
+            FROM cajero
+            ORDER BY id_cajero
+        """)
+
+        cajeros = cursor.fetchall()
+
+        return render_template(
+            "cajeros.html",
+            cajeros=cajeros
+        )
+
+    except Exception:
+        app.logger.exception("Error al consultar cajeros")
+        return "Error al consultar cajeros", 500
+
+    finally:
+        cursor.close()
+        conexion.close()
+
+
+@app.route("/cajeros/editar/<int:id_cajero>", methods=["GET", "POST"])
+def editar_cajero(id_cajero):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = conexion.cursor(dictionary=True)
+
+    try:
+        cursor.execute("""
+            SELECT id_cajero, nombre, usuario_login, estado
+            FROM cajero
+            WHERE id_cajero = %s
+        """, (id_cajero,))
+
+        cajero = cursor.fetchone()
+
+        if not cajero:
+            return "Cajero no encontrado", 404
+
+        if request.method == "POST":
+            nombre = request.form.get("nombre", "").strip()
+            usuario_login = request.form.get("usuario_login", "").strip()
+            estado = request.form.get("estado", "")
+
+            if not nombre or not usuario_login:
+                return "Nombre y usuario son obligatorios", 400
+
+            if estado not in ("0", "1"):
+                return "Estado no válido", 400
+
+            cursor.execute("""
+                UPDATE cajero
+                SET nombre = %s,
+                    usuario_login = %s,
+                    estado = %s
+                WHERE id_cajero = %s
+            """, (nombre, usuario_login, int(estado), id_cajero))
+
+            conexion.commit()
+            return redirect(url_for("cajeros_web"))
+
+        return render_template(
+            "editar_cajero.html",
+            cajero=cajero
+        )
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception("Error al editar cajero")
+        return "Error al editar cajero", 500
+
+    finally:
+        cursor.close()
+        conexion.close()
+
+
+
+@app.route("/cajeros/agregar", methods=["GET", "POST"])
+def agregar_cajero():
+    if request.method == "GET":
+        return render_template("agregar_cajero.html")
+
+    nombre = request.form.get("nombre", "").strip()
+    usuario_login = request.form.get("usuario_login", "").strip()
+    contrasena = request.form.get("contrasena", "")
+    estado = request.form.get("estado", "")
+
+    if not nombre or not usuario_login or not contrasena:
+        return "Todos los campos son obligatorios", 400
+
+    if estado not in ("0", "1"):
+        return "Estado no válido", 400
+
+    contrasena_hash = generate_password_hash(contrasena)
+
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+
+        cursor.execute("""
+            INSERT INTO cajero
+                (nombre, usuario_login, contrasena_hash, estado)
+            VALUES (%s, %s, %s, %s)
+        """, (
+            nombre,
+            usuario_login,
+            contrasena_hash,
+            int(estado)
+        ))
+
+        conexion.commit()
+
+        return redirect(url_for("cajeros_web"))
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception("Error al agregar cajero")
+        return "Error al agregar cajero", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/meseros", methods=["GET"])
+def meseros_web():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT id_mesero, nombre, usuario_login, estado
+            FROM mesero
+            ORDER BY id_mesero
+        """)
+
+        meseros = cursor.fetchall()
+
+        return render_template(
+            "meseros.html",
+            meseros=meseros
+        )
+
+    except Exception:
+        app.logger.exception("Error al consultar meseros")
+        return "Error al consultar meseros", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+@app.route("/meseros/agregar", methods=["GET", "POST"])
+def agregar_mesero():
+    if request.method == "GET":
+        return render_template("agregar_meseros.html")
+
+    nombre = request.form.get("nombre", "").strip()
+    usuario_login = request.form.get("usuario_login", "").strip()
+    contrasena = request.form.get("contrasena", "")
+    estado = request.form.get("estado", "")
+
+    if not nombre or not usuario_login or not contrasena:
+        return "Todos los campos son obligatorios", 400
+
+    if estado not in ("0", "1"):
+        return "Estado no válido", 400
+
+    contrasena_hash = generate_password_hash(contrasena)
+
+    conexion = obtener_conexion()
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+
+        cursor.execute("""
+            INSERT INTO mesero
+                (nombre, usuario_login, contrasena_hash, estado)
+            VALUES (%s, %s, %s, %s)
+        """, (
+            nombre,
+            usuario_login,
+            contrasena_hash,
+            int(estado)
+        ))
+
+        conexion.commit()
+
+        return redirect(url_for("meseros_web"))
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception("Error al agregar mesero")
+        return "Error al agregar mesero", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/meseros/eliminar/<int:id_mesero>", methods=["POST"])
+def eliminar_mesero_web(id_mesero):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            "DELETE FROM mesero WHERE id_mesero = %s",
+            (id_mesero,)
+        )
+
+        if cursor.rowcount == 0:
+            conexion.rollback()
+            return "Mesero no encontrado", 404
+
+        conexion.commit()
+
+        return redirect(url_for("meseros_web"))
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception("Error al eliminar mesero")
+        return "No se pudo eliminar el mesero. Verifica si tiene registros relacionados.", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+@app.route("/meseros/editar/<int:id_mesero>", methods=["GET", "POST"])
+def editar_mesero(id_mesero):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT id_mesero, nombre, usuario_login, estado
+            FROM mesero
+            WHERE id_mesero = %s
+        """, (id_mesero,))
+
+        mesero = cursor.fetchone()
+
+        if not mesero:
+            return "Mesero no encontrado", 404
+
+        if request.method == "POST":
+            nombre = request.form.get("nombre", "").strip()
+            usuario_login = request.form.get("usuario_login", "").strip()
+            estado = request.form.get("estado", "")
+
+            if not nombre or not usuario_login:
+                return "Nombre y usuario son obligatorios", 400
+
+            if estado not in ("0", "1"):
+                return "Estado no válido", 400
+
+            cursor.execute("""
+                UPDATE mesero
+                SET nombre = %s,
+                    usuario_login = %s,
+                    estado = %s
+                WHERE id_mesero = %s
+            """, (
+                nombre,
+                usuario_login,
+                int(estado),
+                id_mesero
+            ))
+
+            conexion.commit()
+
+            return redirect(url_for("meseros_web"))
+
+        return render_template(
+            "editar_mesero.html",
+            mesero=mesero
+        )
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception("Error al editar mesero")
+        return "Error al editar mesero", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/pedidos", methods=["GET"])
+def pedidos_web():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT id_pedido, tipo_pedido, id_mesa,
+                   direccion_entrega, id_mesero, estado,
+                   fecha_creacion, fecha_ultima_actualizacion
+            FROM pedido
+            ORDER BY id_pedido
+        """)
+
+        pedidos = cursor.fetchall()
+
+        return render_template(
+            "pedidos.html",
+            pedidos=pedidos
+        )
+
+    except Exception:
+        app.logger.exception("Error al consultar pedidos")
+        return "Error al consultar pedidos", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/pedidos/agregar", methods=["GET", "POST"])
+def agregar_pedido():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        if request.method == "POST":
+            tipo_pedido = request.form.get("tipo_pedido", "")
+            id_mesa = request.form.get("id_mesa") or None
+            direccion = request.form.get(
+                "direccion_entrega", ""
+            ).strip() or None
+            id_mesero = request.form.get("id_mesero", "")
+            estado = "Pendiente"
+
+            if tipo_pedido not in (
+                "Mesa", "Domicilio", "Para llevar"
+            ):
+                return "Tipo de pedido no válido", 400
+
+            if not id_mesero.isdigit():
+                return "Selecciona un mesero válido", 400
+
+            if tipo_pedido == "Mesa":
+                if not id_mesa or not id_mesa.isdigit():
+                    return "Selecciona una mesa válida", 400
+                direccion = None
+
+            elif tipo_pedido == "Domicilio":
+                if not direccion:
+                    return "La dirección es obligatoria", 400
+                id_mesa = None
+
+            else:
+                id_mesa = None
+                direccion = None
+
+            cursor.execute(
+                "SELECT id_mesero FROM mesero WHERE id_mesero = %s",
+                (int(id_mesero),)
+            )
+
+            if not cursor.fetchone():
+                return "El mesero seleccionado no existe", 400
+
+            if id_mesa:
+                cursor.execute(
+                    "SELECT id_mesa FROM mesa WHERE id_mesa = %s",
+                    (int(id_mesa),)
+                )
+
+                if not cursor.fetchone():
+                    return "La mesa seleccionada no existe", 400
+
+            cursor.execute("""
+                INSERT INTO pedido
+                    (tipo_pedido, id_mesa, direccion_entrega,
+                     id_mesero, estado)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                tipo_pedido,
+                int(id_mesa) if id_mesa else None,
+                direccion,
+                int(id_mesero),
+                estado
+            ))
+
+            conexion.commit()
+            return redirect(url_for("pedidos_web"))
+
+        cursor.execute("""
+            SELECT id_mesa
+            FROM mesa
+            ORDER BY id_mesa
+        """)
+        mesas = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT id_mesero, nombre
+            FROM mesero
+            ORDER BY nombre
+        """)
+        meseros = cursor.fetchall()
+
+        return render_template(
+            "agregar_pedido.html",
+            mesas=mesas,
+            meseros=meseros
+        )
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception("Error al agregar pedido")
+        return "Error al agregar pedido", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+@app.route("/pedidos/editar/<int:id_pedido>", methods=["GET", "POST"])
+def editar_pedido_web(id_pedido):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        # Buscar el pedido que vamos a editar
+        cursor.execute("""
+            SELECT id_pedido, tipo_pedido, id_mesa,
+                   direccion_entrega, id_mesero, estado
+            FROM pedido
+            WHERE id_pedido = %s
+        """, (id_pedido,))
+
+        pedido = cursor.fetchone()
+
+        if not pedido:
+            return "El pedido no existe", 404
+
+        if request.method == "POST":
+            tipo_pedido = request.form.get("tipo_pedido", "")
+            id_mesa = request.form.get("id_mesa") or None
+            direccion = request.form.get(
+                "direccion_entrega", ""
+            ).strip() or None
+            id_mesero = request.form.get("id_mesero", "")
+            estado = request.form.get("estado", "")
+
+            tipos_validos = [
+                "Mesa", "Domicilio", "Para llevar"
+            ]
+
+            estados_validos = [
+                "Pendiente",
+                "En preparación",
+                "Listo",
+                "Entregado",
+                "Cancelado"
+            ]
+
+            if tipo_pedido not in tipos_validos:
+                return "Tipo de pedido no válido", 400
+
+            if estado not in estados_validos:
+                return "Estado no válido", 400
+
+            if not id_mesero.isdigit():
+                return "Selecciona un mesero válido", 400
+
+            if tipo_pedido == "Mesa":
+                if not id_mesa or not id_mesa.isdigit():
+                    return "Selecciona una mesa válida", 400
+                direccion = None
+
+            elif tipo_pedido == "Domicilio":
+                if not direccion:
+                    return "La dirección es obligatoria", 400
+                id_mesa = None
+
+            else:
+                id_mesa = None
+                direccion = None
+
+            # Comprobar que el mesero exista
+            cursor.execute("""
+                SELECT id_mesero
+                FROM mesero
+                WHERE id_mesero = %s
+            """, (int(id_mesero),))
+
+            if not cursor.fetchone():
+                return "El mesero no existe", 400
+
+            # Comprobar que la mesa exista
+            if id_mesa:
+                cursor.execute("""
+                    SELECT id_mesa
+                    FROM mesa
+                    WHERE id_mesa = %s
+                """, (int(id_mesa),))
+
+                if not cursor.fetchone():
+                    return "La mesa no existe", 400
+
+            # Actualizar el pedido
+            cursor.execute("""
+                UPDATE pedido
+                SET tipo_pedido = %s,
+                    id_mesa = %s,
+                    direccion_entrega = %s,
+                    id_mesero = %s,
+                    estado = %s
+                WHERE id_pedido = %s
+            """, (
+                tipo_pedido,
+                int(id_mesa) if id_mesa else None,
+                direccion,
+                int(id_mesero),
+                estado,
+                id_pedido
+            ))
+
+            conexion.commit()
+
+            return redirect(url_for("pedidos_web"))
+
+        # Cargar mesas para el formulario
+        cursor.execute("""
+            SELECT id_mesa
+            FROM mesa
+            ORDER BY id_mesa
+        """)
+        mesas = cursor.fetchall()
+
+        # Cargar meseros para el formulario
+        cursor.execute("""
+            SELECT id_mesero, nombre
+            FROM mesero
+            ORDER BY nombre
+        """)
+        meseros = cursor.fetchall()
+
+        return render_template(
+            "editar_pedido.html",
+            pedido=pedido,
+            mesas=mesas,
+            meseros=meseros
+        )
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception("Error al editar pedido")
+        return "Error al editar pedido", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/pedidos/eliminar/<int:id_pedido>", methods=["POST"])
+def eliminar_pedido_web(id_pedido):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(buffered=True)
+
+        cursor.execute("""
+            SELECT id_pedido
+            FROM pedido
+            WHERE id_pedido = %s
+        """, (id_pedido,))
+
+        if not cursor.fetchone():
+            return "El pedido no existe", 404
+
+        cursor.execute("""
+            DELETE FROM pedido
+            WHERE id_pedido = %s
+        """, (id_pedido,))
+
+        conexion.commit()
+
+        return redirect(url_for("pedidos_web"))
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception("Error al eliminar pedido")
+        return (
+            "No se pudo eliminar el pedido. "
+            "Puede tener registros relacionados "
+            "en otras tablas.",
+            500
+        )
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/historial-estados", methods=["GET"])
+def historial_estados_web():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT id_historial, id_pedido, estado,
+                   fecha, rol_usuario_cambio,
+                   id_usuario_cambio
+            FROM historial_estado
+            ORDER BY id_historial DESC
+        """)
+
+        historial_estados = cursor.fetchall()
+
+        return render_template(
+            "historial_estado.html",
+            historial_estados=historial_estados
+        )
+
+    except Exception:
+        app.logger.exception(
+            "Error al consultar historial de estados"
+        )
+        return "Error al consultar historial de estados", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/historial-estados/agregar", methods=["GET", "POST"])
+def agregar_historial_estado_web():
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        if request.method == "POST":
+            id_pedido = request.form.get("id_pedido", "")
+            estado = request.form.get("estado", "")
+            rol = request.form.get(
+                "rol_usuario_cambio", ""
+            ).strip() or None
+            id_usuario = request.form.get(
+                "id_usuario_cambio", ""
+            ).strip() or None
+
+            estados_validos = [
+                "Pendiente",
+                "En preparación",
+                "Listo",
+                "Entregado",
+                "Cancelado"
+            ]
+
+            roles_validos = [
+                "administrador",
+                "cajero",
+                "mesero",
+                "cocina"
+            ]
+
+            if not id_pedido.isdigit():
+                return "Selecciona un pedido válido", 400
+
+            if estado not in estados_validos:
+                return "Estado no válido", 400
+
+            if rol and rol not in roles_validos:
+                return "Rol no válido", 400
+
+            if id_usuario:
+                if not id_usuario.isdigit():
+                    return "ID de usuario no válido", 400
+                if not rol:
+                    return "Selecciona el rol del usuario", 400
+                id_usuario = int(id_usuario)
+
+            cursor.execute("""
+                SELECT id_pedido
+                FROM pedido
+                WHERE id_pedido = %s
+            """, (int(id_pedido),))
+
+            if not cursor.fetchone():
+                return "El pedido no existe", 404
+
+            cursor.execute("""
+                INSERT INTO historial_estado
+                    (id_pedido, estado,
+                     rol_usuario_cambio, id_usuario_cambio)
+                VALUES (%s, %s, %s, %s)
+            """, (
+                int(id_pedido),
+                estado,
+                rol,
+                id_usuario
+            ))
+
+            conexion.commit()
+
+            return redirect(
+                url_for("historial_estados_web")
+            )
+
+        cursor.execute("""
+            SELECT id_pedido, tipo_pedido
+            FROM pedido
+            ORDER BY id_pedido
+        """)
+
+        pedidos = cursor.fetchall()
+
+        return render_template(
+            "agregar_historial_estado.html",
+            pedidos=pedidos
+        )
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception(
+            "Error al agregar historial de estado"
+        )
+        return "Error al agregar historial", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/historial-estados/editar/<int:id_historial>", methods=["GET", "POST"])
+def editar_historial_estado_web(id_historial):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT id_historial, id_pedido, estado,
+                   rol_usuario_cambio, id_usuario_cambio
+            FROM historial_estado
+            WHERE id_historial = %s
+        """, (id_historial,))
+
+        registro = cursor.fetchone()
+
+        if not registro:
+            return "Registro de historial no encontrado", 404
+
+        if request.method == "POST":
+            estado = request.form.get("estado", "")
+            rol = request.form.get(
+                "rol_usuario_cambio", ""
+            ).strip() or None
+            id_usuario = request.form.get(
+                "id_usuario_cambio", ""
+            ).strip() or None
+
+            estados_validos = [
+                "Pendiente",
+                "En preparación",
+                "Listo",
+                "Entregado",
+                "Cancelado"
+            ]
+
+            roles_validos = [
+                "administrador",
+                "cajero",
+                "mesero",
+                "cocina"
+            ]
+
+            if estado not in estados_validos:
+                return "Estado no válido", 400
+
+            if rol and rol not in roles_validos:
+                return "Rol no válido", 400
+
+            if id_usuario:
+                if not id_usuario.isdigit():
+                    return "ID de usuario no válido", 400
+
+                if not rol:
+                    return "Selecciona un rol de usuario", 400
+
+                id_usuario = int(id_usuario)
+
+            cursor.execute("""
+                UPDATE historial_estado
+                SET estado = %s,
+                    rol_usuario_cambio = %s,
+                    id_usuario_cambio = %s
+                WHERE id_historial = %s
+            """, (
+                estado,
+                rol,
+                id_usuario,
+                id_historial
+            ))
+
+            conexion.commit()
+
+            return redirect(
+                url_for("historial_estados_web")
+            )
+
+        return render_template(
+            "editar_historial_estado.html",
+            registro=registro
+        )
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception(
+            "Error al editar historial de estado"
+        )
+        return "Error al editar historial", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+
+@app.route("/historial-estados/eliminar/<int:id_historial>", methods=["POST"])
+def eliminar_historial_estado_web(id_historial):
+    conexion = obtener_conexion()
+
+    if not conexion:
+        return "Error al conectar con MySQL", 500
+
+    cursor = None
+
+    try:
+        cursor = conexion.cursor(buffered=True)
+
+        cursor.execute("""
+            SELECT id_historial
+            FROM historial_estado
+            WHERE id_historial = %s
+        """, (id_historial,))
+
+        if not cursor.fetchone():
+            return "Registro de historial no encontrado", 404
+
+        cursor.execute("""
+            DELETE FROM historial_estado
+            WHERE id_historial = %s
+        """, (id_historial,))
+
+        conexion.commit()
+
+        return redirect(
+            url_for("historial_estados_web")
+        )
+
+    except Exception:
+        conexion.rollback()
+        app.logger.exception(
+            "Error al eliminar historial de estado"
+        )
+        return "Error al eliminar historial", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        conexion.close()
+
+@app.route("/productos/agregar")
+def agregar_producto_web():
+    return render_template("agregar_producto.html")
+
+
+@app.route("/cocina")
+def cocina_web():
+    return render_template("cocina.html")
+
+
+@app.route("/administradores")
+def administradores_web():
+    return render_template("administradores.html")
 
 
 if __name__ == "__main__":

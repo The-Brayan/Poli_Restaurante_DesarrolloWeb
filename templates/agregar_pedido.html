@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Agregar Pedido - PoliRestaurante</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #243247;
+        }
+
+        header {
+            background: #17365d;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        header h1 { margin: 0 0 10px; }
+        header p { margin: 0; color: #dbe7f5; }
+
+        .contenedor {
+            max-width: 550px;
+            margin: 40px auto;
+            padding: 35px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+        }
+
+        h2 { color: #17365d; margin-top: 0; }
+
+        .descripcion {
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 30px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #17365d;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover { background: #24548c; }
+
+        .volver {
+            display: block;
+            margin-top: 22px;
+            text-align: center;
+            color: #17365d;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .oculto { display: none; }
+
+        @media (max-width: 600px) {
+            .contenedor {
+                margin: 20px 15px;
+                padding: 25px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>PoliRestaurante</h1>
+    <p>Administración de pedidos</p>
+</header>
+
+<main class="contenedor">
+
+    <h2>Registrar pedido</h2>
+
+    <p class="descripcion">
+        Completa la información para crear un nuevo pedido.
+    </p>
+
+    <form method="POST"
+          action="{{ url_for('agregar_pedido') }}">
+
+        <label for="tipo_pedido">Tipo de pedido</label>
+        <select id="tipo_pedido" name="tipo_pedido" required>
+            <option value="">Selecciona un tipo</option>
+            <option value="Mesa">Mesa</option>
+            <option value="Domicilio">Domicilio</option>
+            <option value="Para llevar">Para llevar</option>
+        </select>
+
+        <div id="campo_mesa" class="oculto">
+            <label for="id_mesa">Mesa</label>
+            <select id="id_mesa" name="id_mesa">
+                <option value="">Selecciona una mesa</option>
+                {% for mesa in mesas %}
+                <option value="{{ mesa.id_mesa }}">
+                    Mesa {{ mesa.id_mesa }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div id="campo_direccion" class="oculto">
+            <label for="direccion_entrega">
+                Dirección de entrega
+            </label>
+            <input type="text"
+                   id="direccion_entrega"
+                   name="direccion_entrega"
+                   placeholder="Escribe la dirección">
+        </div>
+
+        <label for="id_mesero">Mesero responsable</label>
+        <select id="id_mesero" name="id_mesero" required>
+            <option value="">Selecciona un mesero</option>
+            {% for mesero in meseros %}
+            <option value="{{ mesero.id_mesero }}">
+                {{ mesero.nombre }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="estado">Estado del pedido</label>
+        <select id="estado" name="estado" required>
+            <option value="Pendiente">Pendiente</option>
+        </select>
+
+        <button type="submit">Guardar pedido</button>
+
+    </form>
+
+    <a class="volver"
+       href="{{ url_for('pedidos_web') }}">
+        ← Volver a Pedidos
+    </a>
+
+</main>
+
+<script>
+    const tipoPedido = document.getElementById("tipo_pedido");
+    const campoMesa = document.getElementById("campo_mesa");
+    const campoDireccion = document.getElementById("campo_direccion");
+    const idMesa = document.getElementById("id_mesa");
+    const direccion = document.getElementById("direccion_entrega");
+
+    function actualizarCampos() {
+        const tipo = tipoPedido.value;
+
+        campoMesa.classList.toggle("oculto", tipo !== "Mesa");
+        campoDireccion.classList.toggle(
+            "oculto", tipo !== "Domicilio"
+        );
+
+        idMesa.required = tipo === "Mesa";
+        direccion.required = tipo === "Domicilio";
+
+        if (tipo !== "Mesa") idMesa.value = "";
+        if (tipo !== "Domicilio") direccion.value = "";
+    }
+
+    tipoPedido.addEventListener("change", actualizarCampos);
+    actualizarCampos();
+</script>
+
+</body>
+</html>

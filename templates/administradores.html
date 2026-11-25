@@ -1,0 +1,330 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administradores - PoliRestaurante</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+            color: #333;
+        }
+
+        .contenedor {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px #0001;
+        }
+
+        h1, h2 {
+            color: #263238;
+        }
+
+        input, select, button {
+            padding: 10px;
+            margin: 6px 4px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        input, select {
+            min-width: 170px;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            background: #1976d2;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .eliminar {
+            background: #d32f2f;
+        }
+
+        .editar {
+            background: #ed9b20;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #263238;
+            color: white;
+        }
+
+        .volver {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #1976d2;
+            text-decoration: none;
+        }
+
+        #mensaje {
+            margin-top: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+<div class="contenedor">
+
+    <a class="volver" href="/">← Volver al inicio</a>
+
+    <h1>Administración de Administradores</h1>
+
+    <h2 id="tituloFormulario">Registrar administrador</h2>
+
+    <form id="formAdministrador">
+        <input type="text" id="nombre" placeholder="Nombre" required>
+
+        <input type="text" id="usuario_login"
+               placeholder="Usuario de acceso" required>
+
+        <input type="password" id="contrasena_hash"
+               placeholder="Contraseña" required>
+
+        <select id="estado">
+            <option value="1">Activo</option>
+            <option value="0">Inactivo</option>
+        </select>
+
+        <button type="submit" id="btnGuardar">Registrar</button>
+        <button type="button" id="btnCancelar"
+                style="display:none; background:#757575;">
+            Cancelar edición
+        </button>
+    </form>
+
+    <p id="mensaje"></p>
+
+    <h2>Administradores registrados</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Usuario</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody id="tablaAdministradores">
+            <tr>
+                <td colspan="5">Cargando...</td>
+            </tr>
+        </tbody>
+    </table>
+
+</div>
+
+<script>
+    const API = "/api/administradores";
+
+    const formulario = document.getElementById("formAdministrador");
+    const tabla = document.getElementById("tablaAdministradores");
+    const mensaje = document.getElementById("mensaje");
+
+    let administradorEditando = null;
+
+    function mostrarMensaje(texto, error = false) {
+        mensaje.textContent = texto;
+        mensaje.style.color = error ? "#d32f2f" : "#218838";
+    }
+
+    async function cargarAdministradores() {
+        try {
+            const respuesta = await fetch(API);
+            const administradores = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(administradores.error || "Error al consultar");
+            }
+
+            tabla.innerHTML = "";
+
+            if (administradores.length === 0) {
+                tabla.innerHTML =
+                    '<tr><td colspan="5">No hay administradores registrados.</td></tr>';
+                return;
+            }
+
+            administradores.forEach(admin => {
+                const fila = document.createElement("tr");
+
+                const valores = [
+                    admin.id_administrador,
+                    admin.nombre,
+                    admin.usuario_login,
+                    Number(admin.estado) === 1 ? "Activo" : "Inactivo"
+                ];
+
+                valores.forEach(valor => {
+                    const celda = document.createElement("td");
+                    celda.textContent = valor ?? "";
+                    fila.appendChild(celda);
+                });
+
+                const acciones = document.createElement("td");
+
+                const botonEditar = document.createElement("button");
+                botonEditar.textContent = "Editar";
+                botonEditar.className = "editar";
+                botonEditar.onclick = () => editarAdministrador(admin);
+
+                const botonEliminar = document.createElement("button");
+                botonEliminar.textContent = "Eliminar";
+                botonEliminar.className = "eliminar";
+                botonEliminar.onclick = () =>
+                    eliminarAdministrador(admin.id_administrador);
+
+                acciones.appendChild(botonEditar);
+                acciones.appendChild(botonEliminar);
+                fila.appendChild(acciones);
+
+                tabla.appendChild(fila);
+            });
+
+        } catch (error) {
+            mostrarMensaje(error.message, true);
+        }
+    }
+
+    formulario.addEventListener("submit", async function(evento) {
+        evento.preventDefault();
+
+        const datos = {
+            nombre: document.getElementById("nombre").value.trim(),
+            usuario_login: document.getElementById("usuario_login").value.trim(),
+            estado: Number(document.getElementById("estado").value)
+        };
+
+        const contrasena = document.getElementById("contrasena_hash").value;
+
+        if (!administradorEditando || contrasena) {
+            datos.contrasena_hash = contrasena;
+        }
+
+        const url = administradorEditando
+            ? `${API}/${administradorEditando}`
+            : API;
+
+        const metodo = administradorEditando ? "PUT" : "POST";
+
+        try {
+            const respuesta = await fetch(url, {
+                method: metodo,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(datos)
+            });
+
+            const resultado = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(resultado.error || "No se pudo guardar");
+            }
+
+            mostrarMensaje(resultado.mensaje);
+            cancelarEdicion();
+            cargarAdministradores();
+
+        } catch (error) {
+            mostrarMensaje(error.message, true);
+        }
+    });
+
+    function editarAdministrador(admin) {
+        administradorEditando = admin.id_administrador;
+
+        document.getElementById("nombre").value = admin.nombre;
+        document.getElementById("usuario_login").value = admin.usuario_login;
+        document.getElementById("estado").value = admin.estado;
+        document.getElementById("contrasena_hash").value = "";
+        document.getElementById("contrasena_hash").required = false;
+
+        document.getElementById("contrasena_hash").placeholder =
+            "Nueva contraseña (opcional)";
+
+        document.getElementById("tituloFormulario").textContent =
+            "Editar administrador";
+
+        document.getElementById("btnGuardar").textContent = "Actualizar";
+        document.getElementById("btnCancelar").style.display = "inline-block";
+
+        mostrarMensaje("Editando administrador #" + administradorEditando);
+    }
+
+    async function eliminarAdministrador(id) {
+        if (!confirm("¿Deseas eliminar este administrador?")) {
+            return;
+        }
+
+        try {
+            const respuesta = await fetch(`${API}/${id}`, {
+                method: "DELETE"
+            });
+
+            const resultado = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(resultado.error || "No se pudo eliminar");
+            }
+
+            mostrarMensaje(resultado.mensaje);
+            cargarAdministradores();
+
+        } catch (error) {
+            mostrarMensaje(error.message, true);
+        }
+    }
+
+    function cancelarEdicion() {
+        administradorEditando = null;
+        formulario.reset();
+
+        document.getElementById("contrasena_hash").required = true;
+        document.getElementById("contrasena_hash").placeholder = "Contraseña";
+
+        document.getElementById("tituloFormulario").textContent =
+            "Registrar administrador";
+
+        document.getElementById("btnGuardar").textContent = "Registrar";
+        document.getElementById("btnCancelar").style.display = "none";
+    }
+
+    document.getElementById("btnCancelar").addEventListener(
+        "click", cancelarEdicion
+    );
+
+    cargarAdministradores();
+</script>
+
+</body>
+</html>

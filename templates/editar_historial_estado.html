@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Editar Historial - PoliRestaurante</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #243247;
+        }
+
+        header {
+            background: #17365d;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        header h1 {
+            margin: 0 0 10px;
+        }
+
+        .contenedor {
+            max-width: 550px;
+            margin: 40px auto;
+            padding: 35px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+        }
+
+        h2 {
+            color: #17365d;
+        }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 30px;
+            padding: 14px;
+            background: #17365d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #24548c;
+        }
+
+        .volver {
+            display: block;
+            margin-top: 22px;
+            text-align: center;
+            color: #17365d;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .nota {
+            color: #64748b;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>PoliRestaurante</h1>
+    <p>Administración de historial de estados</p>
+</header>
+
+<main class="contenedor">
+
+    <h2>Editar historial #{{ registro.id_historial }}</h2>
+
+    <p class="nota">
+        Modifica los datos del registro seleccionado.
+        Esta operación debe utilizarse únicamente
+        con registros de prueba.
+    </p>
+
+    <form method="POST">
+
+        <label>ID del pedido</label>
+        <input type="number"
+               value="{{ registro.id_pedido }}"
+               disabled>
+
+        <label for="estado">Estado</label>
+        <select id="estado" name="estado" required>
+            {% for estado in [
+                'Pendiente',
+                'En preparación',
+                'Listo',
+                'Entregado',
+                'Cancelado'
+            ] %}
+            <option value="{{ estado }}"
+                {% if registro.estado == estado %}
+                selected
+                {% endif %}>
+                {{ estado }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="rol_usuario_cambio">
+            Rol del usuario
+        </label>
+
+        <select id="rol_usuario_cambio"
+                name="rol_usuario_cambio">
+
+            <option value="">Sin especificar</option>
+
+            {% for rol in [
+                'administrador',
+                'cajero',
+                'mesero',
+                'cocina'
+            ] %}
+            <option value="{{ rol }}"
+                {% if registro.rol_usuario_cambio == rol %}
+                selected
+                {% endif %}>
+                {{ rol | capitalize }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="id_usuario_cambio">
+            ID del usuario
+        </label>
+
+        <input type="number"
+               id="id_usuario_cambio"
+               name="id_usuario_cambio"
+               min="1"
+               value="{{ registro.id_usuario_cambio or '' }}">
+
+        <button type="submit">
+            Guardar cambios
+        </button>
+
+    </form>
+
+    <a class="volver"
+       href="{{ url_for('historial_estados_web') }}">
+        ← Volver al historial
+    </a>
+
+</main>
+
+</body>
+</html>

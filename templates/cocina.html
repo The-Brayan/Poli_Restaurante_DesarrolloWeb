@@ -1,0 +1,352 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de cocina - PoliRestaurante</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+            color: #333;
+        }
+
+        .contenedor {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px #00000015;
+        }
+
+        h1 { color: #263238; }
+
+        .acciones {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            gap: 10px;
+        }
+
+        button, .boton {
+            border: none;
+            padding: 10px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .agregar { background: #198754; }
+        .editar { background: #0d6efd; }
+        .eliminar { background: #dc3545; }
+        .volver { background: #6c757d; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #263238;
+            color: white;
+        }
+
+        tr:hover { background: #f1f1f1; }
+
+        .tabla-contenedor { overflow-x: auto; }
+
+        #mensaje {
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .estado-activo { color: #198754; font-weight: bold; }
+        .estado-inactivo { color: #dc3545; font-weight: bold; }
+
+        .formulario {
+            display: none;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .formulario input,
+        .formulario select {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 15px;
+            box-sizing: border-box;
+        }
+
+        .formulario label { font-weight: bold; }
+    </style>
+</head>
+
+<body>
+<div class="contenedor">
+
+    <h1>Gestión de cocina</h1>
+    <p>Administra los usuarios y estados del módulo de cocina.</p>
+
+    <div class="acciones">
+        <button class="agregar" onclick="mostrarFormulario()">
+            + Agregar usuario de cocina
+        </button>
+
+        <a href="/" class="boton volver">Volver al inicio</a>
+    </div>
+
+    <div id="mensaje"></div>
+
+    <section class="formulario" id="formulario">
+        <h3 id="tituloFormulario">Registrar usuario de cocina</h3>
+
+        <form id="formCocina">
+            <label>Nombre:</label>
+            <input type="text" id="nombre" required>
+
+            <label>Usuario de inicio de sesión:</label>
+            <input type="text" id="usuario_login" required>
+
+            <label>Contraseña:</label>
+            <input type="password" id="contrasena_hash" required>
+
+            <label>Estado:</label>
+            <select id="estado" required>
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+            </select>
+
+            <button type="submit" class="agregar">Guardar</button>
+            <button type="button" class="volver" onclick="cerrarFormulario()">
+                Cancelar
+            </button>
+        </form>
+    </section>
+
+    <div class="tabla-contenedor">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Usuario</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+
+            <tbody id="tablaCocina">
+                <tr>
+                    <td colspan="5">Cargando registros...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    const tabla = document.getElementById("tablaCocina");
+    const mensaje = document.getElementById("mensaje");
+    const formulario = document.getElementById("formulario");
+    const formCocina = document.getElementById("formCocina");
+
+    let idEdicion = null;
+
+    async function cargarCocina() {
+        try {
+            const respuesta = await fetch("/api/cocina");
+            const registros = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(registros.error || "No se pudieron cargar los registros");
+            }
+
+            tabla.innerHTML = "";
+
+            if (registros.length === 0) {
+                tabla.innerHTML = `
+                    <tr><td colspan="5">No hay usuarios registrados.</td></tr>`;
+                return;
+            }
+
+            registros.forEach(registro => {
+                const fila = document.createElement("tr");
+
+                [
+                    registro.id_cocina,
+                    registro.nombre,
+                    registro.usuario_login
+                ].forEach(valor => {
+                    const celda = document.createElement("td");
+                    celda.textContent = valor ?? "";
+                    fila.appendChild(celda);
+                });
+
+                const celdaEstado = document.createElement("td");
+                celdaEstado.textContent =
+                    Number(registro.estado) === 1 ? "Activo" : "Inactivo";
+                celdaEstado.className =
+                    Number(registro.estado) === 1
+                        ? "estado-activo"
+                        : "estado-inactivo";
+
+                fila.appendChild(celdaEstado);
+
+                const acciones = document.createElement("td");
+
+                const botonEditar = document.createElement("button");
+                botonEditar.textContent = "Editar";
+                botonEditar.className = "editar";
+                botonEditar.onclick = () => prepararEdicion(registro);
+
+                const botonEliminar = document.createElement("button");
+                botonEliminar.textContent = "Eliminar";
+                botonEliminar.className = "eliminar";
+                botonEliminar.onclick = () => eliminarCocina(registro.id_cocina);
+
+                acciones.appendChild(botonEditar);
+                acciones.appendChild(document.createTextNode(" "));
+                acciones.appendChild(botonEliminar);
+
+                fila.appendChild(acciones);
+                tabla.appendChild(fila);
+            });
+
+        } catch (error) {
+            tabla.innerHTML = `
+                <tr><td colspan="5">Error al cargar los registros.</td></tr>`;
+            mensaje.textContent = error.message;
+        }
+    }
+
+    function mostrarFormulario() {
+        idEdicion = null;
+        formCocina.reset();
+
+        document.getElementById("tituloFormulario").textContent =
+            "Registrar usuario de cocina";
+
+        document.getElementById("contrasena_hash").required = true;
+        formulario.style.display = "block";
+    }
+
+    function cerrarFormulario() {
+        formulario.style.display = "none";
+        formCocina.reset();
+        idEdicion = null;
+    }
+
+    function prepararEdicion(registro) {
+        idEdicion = registro.id_cocina;
+
+        document.getElementById("tituloFormulario").textContent =
+            "Editar usuario de cocina";
+
+        document.getElementById("nombre").value = registro.nombre;
+        document.getElementById("usuario_login").value = registro.usuario_login;
+        document.getElementById("estado").value = registro.estado;
+
+        const contrasena = document.getElementById("contrasena_hash");
+        contrasena.value = "";
+        contrasena.required = false;
+        contrasena.placeholder = "Dejar vacío para conservar la contraseña actual";
+
+        formulario.style.display = "block";
+    }
+
+    formCocina.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const datos = {
+            nombre: document.getElementById("nombre").value.trim(),
+            usuario_login: document.getElementById("usuario_login").value.trim(),
+            estado: Number(document.getElementById("estado").value)
+        };
+
+        const contrasena = document.getElementById("contrasena_hash").value;
+
+        if (contrasena) {
+            datos.contrasena_hash = contrasena;
+        }
+
+        if (!idEdicion && !contrasena) {
+            mensaje.textContent = "Debes ingresar una contraseña.";
+            return;
+        }
+
+        const url = idEdicion
+            ? `/api/cocina/${idEdicion}`
+            : "/api/cocina";
+
+        const metodo = idEdicion ? "PUT" : "POST";
+
+        try {
+            const respuesta = await fetch(url, {
+                method: metodo,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(datos)
+            });
+
+            const resultado = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(resultado.error || resultado.mensaje || "No se pudo guardar");
+            }
+
+            mensaje.textContent = resultado.mensaje;
+            cerrarFormulario();
+            cargarCocina();
+
+        } catch (error) {
+            mensaje.textContent = error.message;
+        }
+    });
+
+    async function eliminarCocina(id) {
+        if (!confirm("¿Estás seguro de eliminar este usuario de cocina?")) {
+            return;
+        }
+
+        try {
+            const respuesta = await fetch(`/api/cocina/${id}`, {
+                method: "DELETE"
+            });
+
+            const resultado = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(resultado.error || resultado.mensaje || "No se pudo eliminar");
+            }
+
+            mensaje.textContent = resultado.mensaje;
+            cargarCocina();
+
+        } catch (error) {
+            mensaje.textContent = error.message;
+        }
+    }
+
+    cargarCocina();
+</script>
+
+</body>
+</html>

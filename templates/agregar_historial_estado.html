@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Agregar Historial - PoliRestaurante</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #243247;
+        }
+
+        header {
+            background: #17365d;
+            color: white;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        header h1 {
+            margin: 0 0 10px;
+        }
+
+        header p {
+            margin: 0;
+            color: #dbe7f5;
+        }
+
+        .contenedor {
+            max-width: 550px;
+            margin: 40px auto;
+            padding: 35px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+        }
+
+        h2 {
+            color: #17365d;
+            margin-top: 0;
+        }
+
+        .descripcion {
+            color: #64748b;
+            line-height: 1.5;
+        }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            background: white;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 30px;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #17365d;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #24548c;
+        }
+
+        .volver {
+            display: block;
+            margin-top: 22px;
+            text-align: center;
+            color: #17365d;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>PoliRestaurante</h1>
+    <p>Historial de estados de pedidos</p>
+</header>
+
+<main class="contenedor">
+
+    <h2>Registrar cambio de estado</h2>
+
+    <p class="descripcion">
+        Selecciona el pedido y registra su nuevo estado.
+    </p>
+
+    <form method="POST">
+
+        <label for="id_pedido">Pedido</label>
+
+        <select id="id_pedido" name="id_pedido" required>
+            <option value="">Selecciona un pedido</option>
+
+            {% for pedido in pedidos %}
+            <option value="{{ pedido.id_pedido }}">
+                Pedido #{{ pedido.id_pedido }}
+                - {{ pedido.tipo_pedido }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <label for="estado">Nuevo estado</label>
+
+        <select id="estado" name="estado" required>
+            <option value="">Selecciona un estado</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En preparación">En preparación</option>
+            <option value="Listo">Listo</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Cancelado">Cancelado</option>
+        </select>
+
+        <label for="rol_usuario_cambio">
+            Rol del usuario
+        </label>
+
+        <select id="rol_usuario_cambio"
+                name="rol_usuario_cambio">
+            <option value="">Selecciona un rol</option>
+            <option value="administrador">Administrador</option>
+            <option value="cajero">Cajero</option>
+            <option value="mesero">Mesero</option>
+            <option value="cocina">Cocina</option>
+        </select>
+
+        <label for="id_usuario_cambio">
+            ID del usuario que realizó el cambio
+        </label>
+
+        <input type="number"
+               id="id_usuario_cambio"
+               name="id_usuario_cambio"
+               min="1"
+               placeholder="Ejemplo: 1">
+
+        <button type="submit">
+            Guardar cambio de estado
+        </button>
+
+    </form>
+
+    <a class="volver"
+       href="{{ url_for('historial_estados_web') }}">
+        ← Volver al historial
+    </a>
+
+</main>
+
+</body>
+</html>
