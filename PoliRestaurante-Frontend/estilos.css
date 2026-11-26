@@ -108,3 +108,32 @@ footer {
     text-align: center;
     padding: 15px;
 }
+
+
+.btn-editar {
+    background-color: #2563eb;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 3px;
+}
+
+.btn-eliminar {
+    background-color: #dc2626;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 3px;
+}
+
+.btn-editar:hover {
+    background-color: #1d4ed8;
+}
+
+.btn-eliminar:hover {
+    background-color: #b91c1c;
+}

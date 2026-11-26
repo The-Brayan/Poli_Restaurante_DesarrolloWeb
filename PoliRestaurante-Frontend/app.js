@@ -21,7 +21,7 @@ async function cargarDatos(endpoint, titulo) {
 
         const datos = await respuesta.json();
 
-        mostrarTabla(datos);
+        mostrarTabla(datos, endpoint);
 
     } catch (error) {
 
@@ -32,7 +32,8 @@ async function cargarDatos(endpoint, titulo) {
 }
 
 // Función para mostrar los datos en una tabla
-function mostrarTabla(datos) {
+
+function mostrarTabla(datos, endpoint) {
 
     const contenido = document.getElementById("contenido");
     contenido.replaceChildren();
@@ -54,6 +55,11 @@ function mostrarTabla(datos) {
         filaEncabezado.appendChild(th);
     });
 
+    // Nueva columna de acciones
+    const thAcciones = document.createElement("th");
+    thAcciones.textContent = "ACCIONES";
+    filaEncabezado.appendChild(thAcciones);
+
     const cuerpo = tabla.createTBody();
 
     datos.forEach(registro => {
@@ -65,10 +71,32 @@ function mostrarTabla(datos) {
             celda.textContent = registro[columna] ?? "";
         });
 
+        // Botones de editar y eliminar
+        const acciones = fila.insertCell();
+
+        const botonEditar = document.createElement("button");
+        botonEditar.textContent = "Editar";
+        botonEditar.className = "btn-editar";
+
+        botonEditar.onclick = () => {
+            editarRegistro(endpoint, registro);
+        };
+
+        const botonEliminar = document.createElement("button");
+        botonEliminar.textContent = "Eliminar";
+        botonEliminar.className = "btn-eliminar";
+
+        botonEliminar.onclick = () => {
+            eliminarRegistro(endpoint, registro);
+        };
+
+        acciones.appendChild(botonEditar);
+        acciones.appendChild(botonEliminar);
     });
 
     contenido.appendChild(tabla);
 }
+
 
 // Servicio REST de clientes
 
@@ -292,9 +320,13 @@ async function cargarMovimientos() {
 
 
 
+
 async function registrarCliente(event) {
 
     event.preventDefault();
+
+    const formulario = event.currentTarget;
+    const id = formulario.dataset.id;
 
     const cliente = {
         nombre: document.getElementById("nombre").value,
@@ -302,10 +334,16 @@ async function registrarCliente(event) {
         correo: document.getElementById("correo").value
     };
 
+    const url = id
+        ? `${API_URL}/clientes/${id}`
+        : `${API_URL}/clientes`;
+
+    const metodo = id ? "PUT" : "POST";
+
     try {
 
-        const respuesta = await fetch(`${API_URL}/clientes`, {
-            method: "POST",
+        const respuesta = await fetch(url, {
+            method: metodo,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -315,10 +353,13 @@ async function registrarCliente(event) {
         const resultado = await respuesta.json();
 
         if (!respuesta.ok) {
-            throw new Error(resultado.error || "Error al registrar");
+            throw new Error(resultado.error || "Error al guardar");
         }
 
-        alert("Cliente registrado correctamente");
+        alert(id
+            ? "Cliente actualizado correctamente"
+            : "Cliente registrado correctamente"
+        );
 
         cargarClientes();
 
@@ -328,9 +369,14 @@ async function registrarCliente(event) {
 }
 
 
+
+
 async function registrarReserva(event) {
 
     event.preventDefault();
+
+    const formulario = event.currentTarget;
+    const id = formulario.dataset.id;
 
     const reserva = {
         id_cliente: Number(document.getElementById("id_cliente").value),
@@ -341,10 +387,16 @@ async function registrarReserva(event) {
         estado: document.getElementById("estado").value
     };
 
+    const url = id
+        ? `${API_URL}/reservas/${id}`
+        : `${API_URL}/reservas`;
+
+    const metodo = id ? "PUT" : "POST";
+
     try {
 
-        const respuesta = await fetch(`${API_URL}/reservas`, {
-            method: "POST",
+        const respuesta = await fetch(url, {
+            method: metodo,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -354,10 +406,13 @@ async function registrarReserva(event) {
         const resultado = await respuesta.json();
 
         if (!respuesta.ok) {
-            throw new Error(resultado.error || "Error al registrar reserva");
+            throw new Error(resultado.error || "Error al guardar reserva");
         }
 
-        alert("Reserva registrada correctamente");
+        alert(id
+            ? "Reserva actualizada correctamente"
+            : "Reserva registrada correctamente"
+        );
 
         cargarReservas();
 
@@ -367,19 +422,30 @@ async function registrarReserva(event) {
 }
 
 
+
+
 async function registrarMesa(event) {
 
     event.preventDefault();
+
+    const formulario = event.currentTarget;
+    const id = formulario.dataset.id;
 
     const mesa = {
         numero: Number(document.getElementById("numero").value),
         estado: document.getElementById("estado_mesa").value
     };
 
+    const url = id
+        ? `${API_URL}/mesas/${id}`
+        : `${API_URL}/mesas`;
+
+    const metodo = id ? "PUT" : "POST";
+
     try {
 
-        const respuesta = await fetch(`${API_URL}/mesas`, {
-            method: "POST",
+        const respuesta = await fetch(url, {
+            method: metodo,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -389,10 +455,13 @@ async function registrarMesa(event) {
         const resultado = await respuesta.json();
 
         if (!respuesta.ok) {
-            throw new Error(resultado.error || "Error al registrar mesa");
+            throw new Error(resultado.error || "Error al guardar mesa");
         }
 
-        alert("Mesa registrada correctamente");
+        alert(id
+            ? "Mesa actualizada correctamente"
+            : "Mesa registrada correctamente"
+        );
 
         cargarMesas();
 
@@ -402,9 +471,14 @@ async function registrarMesa(event) {
 }
 
 
+
+
 async function registrarInsumo(event) {
 
     event.preventDefault();
+
+    const formulario = event.currentTarget;
+    const id = formulario.dataset.id;
 
     const insumo = {
         nombre_insumo: document.getElementById("nombre_insumo").value,
@@ -413,10 +487,16 @@ async function registrarInsumo(event) {
         stock_minimo: Number(document.getElementById("stock_minimo").value)
     };
 
+    const url = id
+        ? `${API_URL}/inventario/${id}`
+        : `${API_URL}/inventario`;
+
+    const metodo = id ? "PUT" : "POST";
+
     try {
 
-        const respuesta = await fetch(`${API_URL}/inventario`, {
-            method: "POST",
+        const respuesta = await fetch(url, {
+            method: metodo,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -426,10 +506,13 @@ async function registrarInsumo(event) {
         const resultado = await respuesta.json();
 
         if (!respuesta.ok) {
-            throw new Error(resultado.error || "Error al registrar insumo");
+            throw new Error(resultado.error || "Error al guardar insumo");
         }
 
-        alert("Insumo registrado correctamente");
+        alert(id
+            ? "Insumo actualizado correctamente"
+            : "Insumo registrado correctamente"
+        );
 
         cargarInventario();
 
@@ -440,9 +523,14 @@ async function registrarInsumo(event) {
 
 
 
+
+
 async function registrarMovimiento(event) {
 
     event.preventDefault();
+
+    const formulario = event.currentTarget;
+    const id = formulario.dataset.id;
 
     const movimiento = {
         id_inventario: Number(document.getElementById("id_inventario").value),
@@ -451,10 +539,16 @@ async function registrarMovimiento(event) {
         motivo: document.getElementById("motivo").value
     };
 
+    const url = id
+        ? `${API_URL}/movimientos/${id}`
+        : `${API_URL}/movimientos`;
+
+    const metodo = id ? "PUT" : "POST";
+
     try {
 
-        const respuesta = await fetch(`${API_URL}/movimientos`, {
-            method: "POST",
+        const respuesta = await fetch(url, {
+            method: metodo,
             headers: {
                 "Content-Type": "application/json"
             },
@@ -464,14 +558,185 @@ async function registrarMovimiento(event) {
         const resultado = await respuesta.json();
 
         if (!respuesta.ok) {
-            throw new Error(resultado.error || "Error al registrar movimiento");
+            throw new Error(resultado.error || "Error al guardar movimiento");
         }
 
-        alert("Movimiento registrado correctamente");
+        alert(id
+            ? "Movimiento actualizado correctamente"
+            : "Movimiento registrado correctamente"
+        );
 
         cargarMovimientos();
 
     } catch (error) {
         alert(error.message);
     }
+}
+
+
+async function eliminarRegistro(endpoint, registro) {
+
+    const identificadores = {
+        clientes: "id_cliente",
+        reservas: "id_reserva",
+        mesas: "id_mesa",
+        inventario: "id_inventario",
+        movimientos: "id_movimiento"
+    };
+
+    const id = registro[identificadores[endpoint]];
+
+    if (id == null) {
+        alert("No se encontró el ID del registro");
+        return;
+    }
+
+    if (!confirm("¿Estás seguro de eliminar este registro?")) {
+        return;
+    }
+
+    try {
+
+        const respuesta = await fetch(`${API_URL}/${endpoint}/${id}`, {
+            method: "DELETE"
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            throw new Error(resultado.error || "Error al eliminar");
+        }
+
+        alert("Registro eliminado correctamente");
+
+        switch (endpoint) {
+            case "clientes":
+                cargarClientes();
+                break;
+            case "reservas":
+                cargarReservas();
+                break;
+            case "mesas":
+                cargarMesas();
+                break;
+            case "inventario":
+                cargarInventario();
+                break;
+            case "movimientos":
+                cargarMovimientos();
+                break;
+        }
+
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+
+
+function editarRegistro(endpoint, registro) {
+
+    const formulario = document.querySelector("#contenido form");
+
+    if (endpoint === "clientes") {
+
+        formulario.dataset.id = registro.id_cliente;
+
+        document.getElementById("nombre").value =
+            registro.nombre ?? "";
+
+        document.getElementById("telefono").value =
+            registro.telefono ?? "";
+
+        document.getElementById("correo").value =
+            registro.correo ?? "";
+
+        formulario.querySelector("h3").textContent =
+            "Editar cliente";
+    }
+
+    if (endpoint === "reservas") {
+
+        formulario.dataset.id = registro.id_reserva;
+
+        document.getElementById("id_cliente").value =
+            registro.id_cliente;
+
+        document.getElementById("id_mesa").value =
+            registro.id_mesa;
+
+        document.getElementById("fecha_reserva").value =
+            registro.fecha_reserva.replace(" ", "T").slice(0, 16);
+
+        document.getElementById("cantidad_personas").value =
+            registro.cantidad_personas;
+
+        document.getElementById("estado").value =
+            registro.estado;
+
+        formulario.querySelector("h3").textContent =
+            "Editar reserva";
+    }
+      if (endpoint === "mesas") {
+
+      formulario.dataset.id = registro.id_mesa;
+
+      document.getElementById("numero").value =
+          registro.numero;
+
+      document.getElementById("estado_mesa").value =
+          registro.estado;
+
+      formulario.querySelector("h3").textContent =
+          "Editar mesa";
+  }
+
+    if (endpoint === "inventario") {
+
+        formulario.dataset.id = registro.id_inventario;
+
+        document.getElementById("nombre_insumo").value =
+            registro.nombre_insumo;
+
+        document.getElementById("cantidad").value =
+            registro.cantidad;
+
+        document.getElementById("unidad_medida").value =
+            registro.unidad_medida;
+
+        document.getElementById("stock_minimo").value =
+            registro.stock_minimo ?? 0;
+
+        formulario.querySelector("h3").textContent =
+            "Editar insumo";
+    }
+
+
+    if (endpoint === "movimientos") {
+
+        formulario.dataset.id = registro.id_movimiento;
+
+        document.getElementById("id_inventario").value =
+            registro.id_inventario;
+
+        document.getElementById("tipo_movimiento").value =
+            registro.tipo_movimiento;
+
+        document.getElementById("cantidad_movimiento").value =
+            registro.cantidad;
+
+        document.getElementById("motivo").value =
+            registro.motivo ?? "";
+
+        formulario.querySelector("h3").textContent =
+            "Editar movimiento";
+    }
+
+
+    formulario.querySelector("button[type='submit']").textContent =
+        "Guardar cambios";
+
+    formulario.scrollIntoView({
+        behavior: "smooth"
+    });
 }
