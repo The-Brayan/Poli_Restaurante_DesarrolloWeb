@@ -31,6 +31,109 @@ async function cargarDatos(endpoint, titulo) {
     }
 }
 
+// ========================================
+// PANEL PRINCIPAL - DASHBOARD
+// ========================================
+
+async function mostrarInicio() {
+
+    document.getElementById("titulo").textContent =
+        "Resumen general del restaurante";
+
+    const contenido = document.getElementById("contenido");
+
+    contenido.innerHTML = `
+        <div class="dashboard-welcome">
+            <h2>¡Bienvenido a PoliRestaurante! 🍽️</h2>
+            <p>Este es el resumen general de tu restaurante.</p>
+        </div>
+
+        <div class="stats-grid">
+
+            <div class="stat-card clientes-card">
+                <div class="stat-icon">👥</div>
+                <div>
+                    <p>Clientes</p>
+                    <h3 id="total-clientes">...</h3>
+                    <span>Registrados</span>
+                </div>
+            </div>
+
+            <div class="stat-card productos-card">
+                <div class="stat-icon">🍔</div>
+                <div>
+                    <p>Productos</p>
+                    <h3 id="total-productos">...</h3>
+                    <span>Registrados</span>
+                </div>
+            </div>
+
+            <div class="stat-card pedidos-card">
+                <div class="stat-icon">📋</div>
+                <div>
+                    <p>Pedidos</p>
+                    <h3 id="total-pedidos">...</h3>
+                    <span>Registrados</span>
+                </div>
+            </div>
+
+            <div class="stat-card reservas-card">
+                <div class="stat-icon">📅</div>
+                <div>
+                    <p>Reservas</p>
+                    <h3 id="total-reservas">...</h3>
+                    <span>Registradas</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="dashboard-info">
+            <h3>Administración del restaurante</h3>
+            <p>
+                Selecciona cualquiera de las secciones del menú
+                lateral para consultar y gestionar la información.
+            </p>
+        </div>
+    `;
+
+    const servicios = [
+        { endpoint: "clientes", elemento: "total-clientes" },
+        { endpoint: "productos", elemento: "total-productos" },
+        { endpoint: "pedidos", elemento: "total-pedidos" },
+        { endpoint: "reservas", elemento: "total-reservas" }
+    ];
+
+    for (const servicio of servicios) {
+
+        try {
+
+            const respuesta = await fetch(
+                `${API_URL}/${servicio.endpoint}`
+            );
+
+            if (!respuesta.ok) {
+                throw new Error("No se pudieron consultar los datos");
+            }
+
+            const datos = await respuesta.json();
+
+            document.getElementById(servicio.elemento).textContent =
+                Array.isArray(datos) ? datos.length : "N/D";
+
+        } catch (error) {
+
+            document.getElementById(servicio.elemento).textContent = "Error";
+            console.error(
+                `Error al consultar ${servicio.endpoint}:`,
+                error
+            );
+
+        }
+    }
+}
+
+
 // Función para mostrar los datos en una tabla
 
 function mostrarTabla(datos, endpoint) {

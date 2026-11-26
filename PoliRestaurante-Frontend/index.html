@@ -4,40 +4,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PoliRestaurante</title>
+    <title>PoliRestaurante | Administración</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
 
-    <header>
-        <h1>PoliRestaurante</h1>
-        <p>Sistema de gestión de restaurantes</p>
-    </header>
+    <div class="dashboard">
 
-    <nav>
-        <button onclick="cargarClientes()">Clientes</button>
-        <button onclick="cargarReservas()">Reservas</button>
-        <button onclick="cargarMesas()">Mesas</button>
-        <button onclick="cargarInventario()">Inventario</button>
-        <button onclick="cargarMovimientos()">Movimientos</button>
-        <button onclick="cargarProductos()">Productos</button>
-        <button onclick="cargarCocina()">Cocina</button>
-        <button onclick="cargarAdministradores()">Administradores</button>
-        <button onclick="cargarPagos()">Pagos</button>
-        <button onclick="cargarDetallesPedido()">Detalles de pedido</button>
-    </nav>
+        <!-- MENÚ LATERAL -->
+        <aside class="sidebar">
 
-    <main>
-        <h2 id="titulo">Bienvenido a PoliRestaurante</h2>
+            <div class="sidebar-brand">
+                <div class="brand-icon">🍽️</div>
+                <div>
+                    <h2>PoliRestaurante</h2>
+                    <span>Panel administrativo</span>
+                </div>
+            </div>
 
-        <div id="contenido">
-            <p>Selecciona una opción del menú.</p>
+            <div class="menu-section">
+                <p class="menu-label">GENERAL</p>
+
+                <button class="menu-button active" onclick="mostrarInicio()">
+                    <span>🏠</span> Inicio
+                </button>
+            </div>
+
+            <div class="menu-section">
+                <p class="menu-label">GESTIÓN</p>
+
+                <button class="menu-button" onclick="cargarClientes()">
+                    <span>👥</span> Clientes
+                </button>
+
+                <button class="menu-button" onclick="cargarReservas()">
+                    <span>📅</span> Reservas
+                </button>
+
+                <button class="menu-button" onclick="cargarMesas()">
+                    <span>🪑</span> Mesas
+                </button>
+
+                <button class="menu-button" onclick="cargarInventario()">
+                    <span>📦</span> Inventario
+                </button>
+
+                <button class="menu-button" onclick="cargarMovimientos()">
+                    <span>🔄</span> Movimientos
+                </button>
+
+                <button class="menu-button" onclick="cargarProductos()">
+                    <span>🍔</span> Productos
+                </button>
+
+                <button class="menu-button" onclick="cargarCocina()">
+                    <span>👨‍🍳</span> Cocina
+                </button>
+
+                <button class="menu-button" onclick="cargarAdministradores()">
+                    <span>🛡️</span> Administradores
+                </button>
+
+                <button class="menu-button" onclick="cargarPagos()">
+                    <span>💳</span> Pagos
+                </button>
+
+                <button class="menu-button" onclick="cargarDetallesPedido()">
+                    <span>📋</span> Detalles de pedido
+                </button>
+            </div>
+
+            <div class="sidebar-footer">
+                <span>●</span> Sistema operativo
+            </div>
+
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="main-area">
+
+            <header class="topbar">
+                <div>
+                    <h1>Panel de administración</h1>
+                    <p>Gestiona la información de tu restaurante</p>
+                </div>
+
+                <div class="admin-profile">
+                    <div class="profile-icon">A</div>
+                    <div>
+                        <strong>Administrador</strong>
+                        <span>PoliRestaurante</span>
+                    </div>
+                </div>
+            </header>
+
+            <main class="main-content">
+
+                <div class="welcome-section">
+                    <h2 id="titulo">Bienvenido a PoliRestaurante</h2>
+                    <p>Selecciona una sección del menú para comenzar a gestionar tu restaurante.</p>
+                </div>
+
+                <div id="contenido">
+
+                    <div class="welcome-card">
+                        <div class="welcome-icon">🍽️</div>
+                        <h3>¡Bienvenido al sistema!</h3>
+                        <p>
+                            Desde este panel puedes administrar clientes,
+                            reservas, productos, inventario, cocina y pagos.
+                        </p>
+                        <p class="welcome-hint">
+                            Utiliza el menú lateral para comenzar.
+                        </p>
+                    </div>
+
+                </div>
+
+            </main>
+
+            <footer class="main-footer">
+                PoliRestaurante © 2026 - Sistema de gestión de restaurantes
+            </footer>
+
         </div>
-    </main>
 
-    <footer>
-        <p>PoliRestaurante - Desarrollo Web</p>
-    </footer>
+    </div>
 
     <script src="app.js?v=2"></script>
 

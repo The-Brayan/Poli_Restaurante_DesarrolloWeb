@@ -1,4 +1,8 @@
 
+/* ========================================
+   CONFIGURACIÓN GENERAL
+======================================== */
+
 * {
     margin: 0;
     padding: 0;
@@ -6,134 +10,595 @@
 }
 
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f6f9;
-    color: #333;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f3f6fa;
+    color: #263445;
     min-height: 100vh;
+}
+
+.dashboard {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ========================================
+   MENÚ LATERAL
+======================================== */
+
+.sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: #172c42;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 25px 16px;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+
+.brand-icon {
+    width: 45px;
+    height: 45px;
+    background: #294d6b;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.sidebar-brand h2 {
+    color: white;
+    font-size: 17px;
+    margin-bottom: 4px;
+}
+
+.sidebar-brand span {
+    color: #aebdcb;
+    font-size: 11px;
+}
+
+.menu-section {
+    margin-top: 28px;
+}
+
+.menu-label {
+    color: #8296aa;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    padding: 0 12px;
+    margin-bottom: 12px;
+}
+
+.menu-button {
+    width: 100%;
+    background: transparent;
+    color: #c5d1dc;
+    border: none;
+    padding: 12px;
+    margin: 3px 0;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    text-align: left;
+    font-size: 14px;
+    transition: all 0.25s ease;
+}
+
+.menu-button span {
+    font-size: 17px;
+    width: 22px;
+    text-align: center;
+}
+
+.menu-button:hover,
+.menu-button.active {
+    background: #2d506e;
+    color: white;
+    transform: translateX(3px);
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding: 20px 8px 0;
+    color: #aebdcb;
+    font-size: 12px;
+}
+
+.sidebar-footer span {
+    color: #39c783;
+    margin-right: 6px;
+}
+
+/* ========================================
+   ÁREA PRINCIPAL
+======================================== */
+
+.main-area {
+    flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
 }
 
-header {
-    background-color: #172c42;
-    color: white;
-    text-align: center;
-    padding: 30px;
-}
-
-header h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
-
-nav {
-    background-color: #243e56;
+.topbar {
+    background: white;
+    padding: 22px 35px;
     display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 15px;
-    padding: 15px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    border-bottom: 1px solid #e5eaf0;
 }
 
-button {
-    background-color: #365670;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 15px;
-    transition: 0.3s;
-}
-
-button:hover {
-    background-color: #2980b9;
-}
-
-main {
-    flex: 1;
-    padding: 30px;
-    overflow-x: auto;
-}
-
-h2 {
+.topbar h1 {
+    font-size: 22px;
     color: #172c42;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
+}
+
+.topbar p {
+    color: #8492a3;
+    font-size: 13px;
+}
+
+.admin-profile {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.profile-icon {
+    width: 42px;
+    height: 42px;
+    background: #e7eef6;
+    color: #244c6b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.admin-profile strong,
+.admin-profile span {
+    display: block;
+}
+
+.admin-profile strong {
+    font-size: 13px;
+    color: #263445;
+}
+
+.admin-profile span {
+    font-size: 11px;
+    color: #8492a3;
+    margin-top: 3px;
+}
+
+/* ========================================
+   CONTENIDO
+======================================== */
+
+.main-content {
+    flex: 1;
+    padding: 32px;
+    overflow-x: hidden;
+}
+
+.welcome-section {
+    margin-bottom: 25px;
+}
+
+.welcome-section h2 {
+    color: #172c42;
+    font-size: 25px;
+    margin-bottom: 8px;
+}
+
+.welcome-section p {
+    color: #8492a3;
+    font-size: 14px;
 }
 
 #contenido {
-    background-color: white;
+    background: white;
     padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 14px;
+    box-shadow: 0 3px 15px rgba(31, 52, 73, 0.06);
+    overflow-x: auto;
+    min-height: 180px;
+    animation: aparecer 0.3s ease;
 }
+
+.welcome-card {
+    text-align: center;
+    padding: 45px 20px;
+    max-width: 550px;
+    margin: auto;
+}
+
+.welcome-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.welcome-card h3 {
+    font-size: 22px;
+    color: #172c42;
+    margin-bottom: 12px;
+}
+
+.welcome-card p {
+    color: #778699;
+    line-height: 1.7;
+    font-size: 14px;
+}
+
+.welcome-hint {
+    margin-top: 15px;
+    color: #315e80 !important;
+    font-weight: 600;
+}
+
+/* ========================================
+   TABLAS
+======================================== */
 
 table {
     width: 100%;
+    min-width: 600px;
     border-collapse: collapse;
     margin-top: 20px;
-}
-
-th, td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
+    font-size: 13px;
 }
 
 th {
-    background-color: #243e56;
+    background: #203c56;
     color: white;
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
 }
 
-tr:hover {
-    background-color: #f0f4f8;
+th:first-child {
+    border-radius: 7px 0 0 0;
 }
 
-input, select {
-    padding: 10px;
-    margin: 8px 0;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    width: 100%;
+th:last-child {
+    border-radius: 0 7px 0 0;
 }
+
+td {
+    padding: 13px 12px;
+    border-bottom: 1px solid #edf0f4;
+    color: #536274;
+}
+
+tr:hover td {
+    background: #f5f8fc;
+}
+
+/* ========================================
+   FORMULARIOS
+======================================== */
 
 form {
-    max-width: 500px;
+    max-width: 600px;
+    margin: 0 auto 30px;
+    padding: 22px;
+    background: #f8fafc;
+    border: 1px solid #e8edf3;
+    border-radius: 12px;
+}
+
+form h3 {
+    color: #203c56;
+    font-size: 19px;
     margin-bottom: 20px;
 }
 
-footer {
-    background-color: #172c42;
-    color: white;
-    text-align: center;
-    padding: 15px;
+label {
+    display: block;
+    color: #44566b;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 12px;
 }
 
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 11px 13px;
+    margin: 7px 0;
+    border: 1px solid #dce3eb;
+    border-radius: 7px;
+    background: white;
+    color: #263445;
+    font-family: inherit;
+    font-size: 13px;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+textarea {
+    min-height: 85px;
+    resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #3983b8;
+    box-shadow: 0 0 0 3px rgba(57, 131, 184, 0.12);
+}
+
+/* ========================================
+   BOTONES
+======================================== */
+
+button {
+    background: #500b5f;
+    color: rgb(202, 196, 196);
+    border: none;
+    padding: 11px 17px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    background: #244967;
+    transform: translateY(-1px);
+}
+
+form button[type="submit"] {
+    margin-top: 15px;
+    background: #267b59;
+}
+
+form button[type="submit"]:hover {
+    background: #341996;
+}
 
 .btn-editar {
-    background-color: #2563eb;
-    color: white;
+    background: #3478bd;
     padding: 8px 12px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin: 3px;
-}
-
-.btn-eliminar {
-    background-color: #dc2626;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
     margin: 3px;
 }
 
 .btn-editar:hover {
-    background-color: #1d4ed8;
+    background: #245b94;
+}
+
+.btn-eliminar {
+    background: #d95353;
+    padding: 8px 12px;
+    margin: 3px;
 }
 
 .btn-eliminar:hover {
-    background-color: #b91c1c;
+    background: #b93636;
+}
+
+/* ========================================
+   PIE DE PÁGINA ORDENADO
+======================================== */
+
+.main-footer {
+    padding: 18px;
+    text-align: center;
+    color: #8795a5;
+    font-size: 12px;
+    border-top: 1px solid #e5eaf0;
+    background: white;
+}
+
+/* ========================================
+   ANIMACIONES PARA CAMBIO DE PAGONA
+======================================== */
+
+@keyframes aparecer {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
+   ADAPTACIÓN A CELULARES POR SI LAS MOSCAS Y PREGUNTA
+======================================== */
+
+@media (max-width: 850px) {
+    .dashboard {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        min-width: 0;
+        padding: 15px;
+    }
+
+    .sidebar-brand {
+        padding-bottom: 15px;
+    }
+
+    .menu-section {
+        margin-top: 15px;
+    }
+
+    .menu-section:not(:first-of-type) {
+        display: block;
+    }
+
+    .menu-button {
+        display: inline-flex;
+        width: auto;
+        margin: 3px;
+    }
+
+    .sidebar-footer {
+        margin-top: 15px;
+    }
+
+    .topbar {
+        padding: 18px;
+        flex-wrap: wrap;
+    }
+
+    .main-content {
+        padding: 18px;
+    }
+}
+
+@media (max-width: 500px) {
+    .admin-profile {
+        display: none;
+    }
+
+    .welcome-section h2 {
+        font-size: 21px;
+    }
+
+    #contenido {
+        padding: 15px;
+    }
+}
+
+/* ========================================
+   DASHBOARD - ESTADÍSTICAS Y LO IMPORTANTITO
+======================================== */
+
+.dashboard-welcome {
+    margin-bottom: 28px;
+}
+
+.dashboard-welcome h2 {
+    color: #203c56;
+    font-size: 22px;
+    margin-bottom: 8px;
+}
+
+.dashboard-welcome p {
+    color: #8492a3;
+    font-size: 14px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 25px;
+    border-radius: 13px;
+    border: 1px solid #e8edf3;
+    background: white;
+    box-shadow: 0 3px 12px rgba(31, 52, 73, 0.05);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 22px rgba(31, 52, 73, 0.10);
+}
+
+.stat-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 27px;
+}
+
+.stat-card p {
+    color: #8492a3;
+    font-size: 13px;
+    margin-bottom: 5px;
+}
+
+.stat-card h3 {
+    color: #203c56;
+    font-size: 29px;
+    margin-bottom: 4px;
+}
+
+.stat-card span {
+    color: #98a4b2;
+    font-size: 11px;
+}
+
+.clientes-card .stat-icon {
+    background: #e8f0fb;
+}
+
+.productos-card .stat-icon {
+    background: #e8f5ed;
+}
+
+.pedidos-card .stat-icon {
+    background: #fff1e3;
+}
+
+.reservas-card .stat-icon {
+    background: #f0eafb;
+}
+
+.dashboard-info {
+    padding: 24px;
+    background: #f5f8fc;
+    border: 1px solid #e8edf3;
+    border-radius: 12px;
+}
+
+.dashboard-info h3 {
+    color: #203c56;
+    font-size: 17px;
+    margin-bottom: 9px;
+}
+
+.dashboard-info p {
+    color: #8492a3;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* tarjetas con las infomraciones de cada cosa importante */
+
+@media (max-width: 650px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .stat-card {
+        padding: 20px;
+    }
 }
