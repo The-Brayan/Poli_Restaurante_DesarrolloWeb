@@ -256,6 +256,433 @@ async function cargarInventario() {
     document.getElementById("contenido").prepend(formulario);
 }
 
+async function cargarProductos() {
+
+    await cargarDatos("productos", "Gestión de productos");
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar nuevo producto</h3>
+
+        <label>Nombre del producto</label>
+        <input type="text" id="nombre_producto" required>
+
+        <label>Descripción</label>
+        <textarea id="descripcion_producto" required></textarea>
+
+        <label>Precio</label>
+        <input type="number" id="precio_producto" min="0" step="0.01" required>
+
+        <label>Disponibilidad</label>
+        <select id="disponibilidad_producto" required>
+            <option value="1">Disponible</option>
+            <option value="0">No disponible</option>
+        </select>
+
+        <label>Categoría</label>
+        <select id="id_categoria" required>
+            <option value="">Cargando categorías...</option>
+        </select>
+
+        <button type="submit">Registrar producto</button>
+    `;
+
+    try {
+
+        const respuesta = await fetch(`${API_URL}/categorias`);
+
+        if (!respuesta.ok) {
+            throw new Error("No se pudieron consultar las categorías");
+        }
+
+        const categorias = await respuesta.json();
+
+        const selector = formulario.querySelector("#id_categoria");
+        selector.innerHTML = '<option value="">Selecciona una categoría</option>';
+
+        categorias.forEach(categoria => {
+            const opcion = document.createElement("option");
+            opcion.value = categoria.id_categoria;
+            opcion.textContent = categoria.nombre;
+            selector.appendChild(opcion);
+        });
+
+    } catch (error) {
+        alert(error.message);
+        return;
+    }
+
+    formulario.addEventListener("submit", registrarProducto);
+
+    document.getElementById("contenido").prepend(formulario);
+}
+
+async function cargarCocina() {
+    await cargarDatos("cocina", "Gestión de cocina");
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar personal de cocina</h3>
+
+        <label>Nombre</label>
+        <input type="text" id="nombre_cocina" required>
+
+        <label>Usuario de acceso</label>
+        <input type="text" id="usuario_cocina" required>
+
+        <label>Contraseña</label>
+        <input type="password" id="contrasena_cocina" required>
+
+        <label>Estado</label>
+        <select id="estado_cocina" required>
+            <option value="1">Activo</option>
+            <option value="0">Inactivo</option>
+        </select>
+
+        <button type="submit">Registrar personal</button>
+    `;
+
+    formulario.addEventListener("submit", registrarCocina);
+
+    document.getElementById("contenido").prepend(formulario);
+}
+
+async function cargarAdministradores() {
+    await cargarDatos("administradores", "Gestión de administradores");
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar administrador</h3>
+
+        <label>Nombre</label>
+        <input type="text" id="nombre_administrador" required>
+
+        <label>Usuario de acceso</label>
+        <input type="text" id="usuario_administrador" required>
+
+        <label>Contraseña</label>
+        <input type="password" id="contrasena_administrador" required>
+
+        <label>Estado</label>
+        <select id="estado_administrador" required>
+            <option value="1">Activo</option>
+            <option value="0">Inactivo</option>
+        </select>
+
+        <button type="submit">Registrar administrador</button>
+    `;
+
+    formulario.addEventListener("submit", registrarAdministrador);
+
+    document.getElementById("contenido").prepend(formulario);
+}
+async function cargarPagos() {
+    await cargarDatos("pagos", "Gestión de pagos");
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar nuevo pago</h3>
+
+        <label>ID del pedido</label>
+        <input type="number" id="id_pedido_pago" min="1" required>
+
+        <label>ID del cajero</label>
+        <input type="number" id="id_cajero_pago" min="1" required>
+
+        <label>Método de pago</label>
+        <select id="metodo_pago" required>
+            <option value="">Seleccione</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Transferencia">Transferencia</option>
+        </select>
+
+        <label>Monto</label>
+        <input type="number" id="monto_pago" min="0.01" step="0.01" required>
+
+        <button type="submit">Registrar pago</button>
+    `;
+
+    formulario.addEventListener("submit", registrarPago);
+
+    document.getElementById("contenido").prepend(formulario);
+}
+async function cargarDetallesPedido() {
+    await cargarDatos("detalles-pedido", "Gestión de detalles de pedido");
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar detalle de pedido</h3>
+
+        <label>ID del pedido</label>
+        <input type="number" id="id_pedido_detalle" min="1" required>
+
+        <label>ID del producto</label>
+        <input type="number" id="id_producto_detalle" min="1" required>
+
+        <label>Cantidad</label>
+        <input type="number" id="cantidad_detalle" min="1" required>
+
+        <label>Precio unitario</label>
+        <input type="number" id="precio_unitario_detalle" min="0" step="0.01" required>
+
+        <label>Notas</label>
+        <textarea id="notas_detalle"></textarea>
+
+        <button type="submit">Registrar detalle</button>
+    `;
+
+    formulario.addEventListener("submit", registrarDetallePedido);
+
+    document.getElementById("contenido").prepend(formulario);
+}
+async function registrarDetallePedido(event) {
+    event.preventDefault();
+
+    const formulario = event.target;
+    const id = formulario.dataset.id;
+
+    const datos = {
+        id_pedido: Number(document.getElementById("id_pedido_detalle").value),
+        id_producto: Number(document.getElementById("id_producto_detalle").value),
+        cantidad: Number(document.getElementById("cantidad_detalle").value),
+        precio_unitario: Number(document.getElementById("precio_unitario_detalle").value),
+        notas: document.getElementById("notas_detalle").value
+    };
+
+    const metodo = id ? "PUT" : "POST";
+
+    const url = id
+        ? `${API_URL}/detalles-pedido/${id}`
+        : `${API_URL}/detalles-pedido`;
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            alert(resultado.error || "No se pudo guardar el detalle");
+            return;
+        }
+
+        alert(id
+            ? "Detalle de pedido actualizado correctamente"
+            : "Detalle de pedido registrado correctamente"
+        );
+
+        cargarDetallesPedido();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error al conectar con el servidor");
+    }
+}
+async function registrarPago(event) {
+    event.preventDefault();
+
+    const formulario = event.target;
+    const id = formulario.dataset.id;
+
+    const datos = {
+        id_pedido: Number(document.getElementById("id_pedido_pago").value),
+        id_cajero: Number(document.getElementById("id_cajero_pago").value),
+        metodo_pago: document.getElementById("metodo_pago").value,
+        monto: Number(document.getElementById("monto_pago").value)
+    };
+
+    const metodo = id ? "PUT" : "POST";
+
+    const url = id
+        ? `${API_URL}/pagos/${id}`
+        : `${API_URL}/pagos`;
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            alert(resultado.error || "No se pudo guardar el pago");
+            return;
+        }
+
+        alert(id ? "Pago actualizado correctamente" : "Pago registrado correctamente");
+
+        cargarPagos();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error al conectar con el servidor");
+    }
+}
+async function registrarAdministrador(event) {
+    event.preventDefault();
+
+    const formulario = event.target;
+    const id = formulario.dataset.id;
+
+    const datos = {
+        nombre: document.getElementById("nombre_administrador").value,
+        usuario_login: document.getElementById("usuario_administrador").value,
+        estado: document.getElementById("estado_administrador").value
+    };
+
+    const contrasena = document.getElementById("contrasena_administrador").value;
+
+    if (contrasena) {
+        datos.contrasena = contrasena;
+    }
+
+    const metodo = id ? "PUT" : "POST";
+    const url = id
+        ? `${API_URL}/administradores/${id}`
+        : `${API_URL}/administradores`;
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            alert(resultado.error || "No se pudo guardar el administrador");
+            return;
+        }
+
+        alert(id ? "Administrador actualizado" : "Administrador registrado");
+
+        cargarAdministradores();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error al conectar con el servidor");
+    }
+}
+
+async function registrarCocina(event) {
+    event.preventDefault();
+
+    const formulario = event.currentTarget;
+    const id = formulario.dataset.id;
+
+    const cocina = {
+        nombre: document.getElementById("nombre_cocina").value,
+        usuario_login: document.getElementById("usuario_cocina").value,
+        estado: Number(document.getElementById("estado_cocina").value)
+    };
+
+    const contrasena = document.getElementById("contrasena_cocina").value;
+
+    if (contrasena) {
+        cocina.contrasena = contrasena;
+    }
+
+    const url = id
+        ? `${API_URL}/cocina/${id}`
+        : `${API_URL}/cocina`;
+
+    const metodo = id ? "PUT" : "POST";
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(cocina)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            throw new Error(resultado.error || "Error al guardar el registro");
+        }
+
+        alert(id
+            ? "Registro de cocina actualizado correctamente"
+            : "Personal de cocina registrado correctamente"
+        );
+
+        cargarCocina();
+
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+async function registrarProducto(event) {
+
+    event.preventDefault();
+
+    const formulario = event.currentTarget;
+    const id = formulario.dataset.id;
+
+    const producto = {
+        nombre: document.getElementById("nombre_producto").value,
+        descripcion: document.getElementById("descripcion_producto").value,
+        precio: Number(document.getElementById("precio_producto").value),
+        disponibilidad: Number(document.getElementById("disponibilidad_producto").value),
+        id_categoria: Number(document.getElementById("id_categoria").value)
+    };
+
+    const url = id
+        ? `${API_URL}/productos/${id}`
+        : `${API_URL}/productos`;
+
+    const metodo = id ? "PUT" : "POST";
+
+    try {
+
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(producto)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            throw new Error(resultado.error || "Error al guardar producto");
+        }
+
+        alert(id
+            ? "Producto actualizado correctamente"
+            : "Producto registrado correctamente"
+        );
+
+        cargarProductos();
+
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+
 
 // Servicio REST de movimientos
 
@@ -581,7 +1008,12 @@ async function eliminarRegistro(endpoint, registro) {
         reservas: "id_reserva",
         mesas: "id_mesa",
         inventario: "id_inventario",
-        movimientos: "id_movimiento"
+        movimientos: "id_movimiento",
+        productos: "id_producto",
+        cocina: "id_cocina",
+        administradores: "id_administrador",
+        pagos: "id_pago",
+        "detalles-pedido": "id_detalle",
     };
 
     const id = registro[identificadores[endpoint]];
@@ -625,6 +1057,21 @@ async function eliminarRegistro(endpoint, registro) {
             case "movimientos":
                 cargarMovimientos();
                 break;
+            case "productos":
+                cargarDatos();
+                break;
+            case "cocina":
+                cargarCocina();
+                break;
+            case "administradores":
+                cargarAdministradores();
+                break;
+            case "pagos":
+                cargarPagos();
+                break;
+            case "detalles-pedido":
+               cargarDetallesPedido();
+                break;
         }
 
     } catch (error) {
@@ -653,6 +1100,50 @@ function editarRegistro(endpoint, registro) {
 
         formulario.querySelector("h3").textContent =
             "Editar cliente";
+    }
+    if (endpoint === "detalles-pedido") {
+        const formulario = document.querySelector("#contenido form");
+    
+        formulario.dataset.id = registro.id_detalle;
+    
+        document.getElementById("id_pedido_detalle").value = registro.id_pedido;
+        document.getElementById("id_producto_detalle").value = registro.id_producto;
+        document.getElementById("cantidad_detalle").value = registro.cantidad;
+        document.getElementById("precio_unitario_detalle").value = registro.precio_unitario;
+        document.getElementById("notas_detalle").value = registro.notas ?? "";
+    
+        formulario.querySelector("h3").textContent = "Editar detalle de pedido";
+        formulario.querySelector("button[type='submit']").textContent = "Actualizar detalle";
+    }
+    if (endpoint === "pagos") {
+        const formulario = document.querySelector("#contenido form");
+    
+        formulario.dataset.id = registro.id_pago;
+    
+        document.getElementById("id_pedido_pago").value = registro.id_pedido;
+        document.getElementById("id_cajero_pago").value = registro.id_cajero;
+        document.getElementById("metodo_pago").value = registro.metodo_pago;
+        document.getElementById("monto_pago").value = registro.monto;
+    
+        formulario.querySelector("h3").textContent = "Editar pago";
+        formulario.querySelector("button[type='submit']").textContent = "Actualizar pago";
+    }
+    if (endpoint === "administradores") {
+        const formulario = document.querySelector("#contenido form");
+    
+        formulario.dataset.id = registro.id_administrador;
+    
+        document.getElementById("nombre_administrador").value = registro.nombre ?? "";
+        document.getElementById("usuario_administrador").value = registro.usuario_login ?? "";
+    
+        const contrasena = document.getElementById("contrasena_administrador");
+        contrasena.value = "";
+        contrasena.required = false;
+    
+        document.getElementById("estado_administrador").value = registro.estado;
+    
+        formulario.querySelector("h3").textContent = "Editar administrador";
+        formulario.querySelector("button[type='submit']").textContent = "Actualizar administrador";
     }
 
     if (endpoint === "reservas") {
@@ -710,6 +1201,50 @@ function editarRegistro(endpoint, registro) {
         formulario.querySelector("h3").textContent =
             "Editar insumo";
     }
+
+if (endpoint === "productos") {
+
+    formulario.dataset.id = registro.id_producto;
+
+    document.getElementById("nombre_producto").value =
+        registro.nombre ?? "";
+
+    document.getElementById("descripcion_producto").value =
+        registro.descripcion ?? "";
+
+    document.getElementById("precio_producto").value =
+        registro.precio ?? "";
+
+    document.getElementById("disponibilidad_producto").value =
+        registro.disponibilidad;
+
+    document.getElementById("id_categoria").value =
+        registro.id_categoria;
+
+    formulario.querySelector("h3").textContent =
+        "Editar producto";
+}
+
+if (endpoint === "cocina") {
+    formulario.dataset.id = registro.id_cocina;
+
+    document.getElementById("nombre_cocina").value =
+        registro.nombre ?? "";
+
+    document.getElementById("usuario_cocina").value =
+        registro.usuario_login ?? "";
+
+    document.getElementById("contrasena_cocina").value = "";
+    document.getElementById("contrasena_cocina").required = false;
+
+    document.getElementById("estado_cocina").value =
+        registro.estado;
+
+    formulario.querySelector("h3").textContent =
+        "Editar personal de cocina";
+}
+
+
 
 
     if (endpoint === "movimientos") {

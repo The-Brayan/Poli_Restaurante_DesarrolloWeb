@@ -12,6 +12,7 @@ from crud_orm import (
 )
 from crud_orm import listar_clientes as orm_listar_clientes
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 
@@ -2123,12 +2124,14 @@ def crear_cocina():
 
     nombre = datos.get("nombre")
     usuario_login = datos.get("usuario_login")
-    contrasena_hash = datos.get("contrasena_hash")
+    contrasena = datos.get("contrasena")
+    contrasena_hash = generate_password_hash(contrasena) if contrasena else None
     estado = datos.get("estado", 1)
 
-    if not nombre or not usuario_login or not contrasena_hash:
+    
+    if not nombre or not usuario_login or not contrasena:
         return jsonify({
-            "error": "Se requieren nombre, usuario_login y contrasena_hash"
+            "error": "Se requieren nombre, usuario_login y contrasena"
         }), 400
 
     conexion = obtener_conexion()
@@ -2211,16 +2214,20 @@ def actualizar_cocina(id_cocina):
 
         conexion.commit()
 
+       
         # Actualizar la contraseña solo si se envía una nueva.
-        nueva_contrasena = datos.get("contrasena_hash")
+        nueva_contrasena = datos.get("contrasena")
 
         if nueva_contrasena:
+            nuevo_hash = generate_password_hash(nueva_contrasena)
+
             cursor.execute("""
                 UPDATE cocina
                 SET contrasena_hash = %s
                 WHERE id_cocina = %s
-            """, (nueva_contrasena, id_cocina))
+            """, (nuevo_hash, id_cocina))
             conexion.commit()
+
 
         return jsonify({"mensaje": "Registro de cocina actualizado correctamente"}), 200
 
@@ -2336,12 +2343,13 @@ def crear_administrador():
 
     nombre = datos.get("nombre")
     usuario_login = datos.get("usuario_login")
-    contrasena_hash = datos.get("fabian02")
+    contrasena = datos.get("contrasena")
+    contrasena_hash = generate_password_hash(contrasena) if contrasena else None
     estado = datos.get("estado", 1)
 
-    if not nombre or not usuario_login or not contrasena_hash:
+    if not nombre or not usuario_login or not contrasena:
         return jsonify({
-            "error": "Se requieren nombre, usuario_login y contrasena_hash"
+            "error": "Se requieren nombre, usuario_login y contrasena"
         }), 400
 
     conexion = obtener_conexion()
@@ -2410,13 +2418,18 @@ def actualizar_administrador(id_administrador):
             if not cursor.fetchone():
                 return jsonify({"error": "Administrador no encontrado"}), 404
 
-        nueva_contrasena = datos.get("contrasena_hash")
+        
+        nueva_contrasena = datos.get("contrasena")
+
         if nueva_contrasena:
+            nuevo_hash = generate_password_hash(nueva_contrasena)
+
             cursor.execute("""
                 UPDATE administrador
                 SET contrasena_hash = %s
                 WHERE id_administrador = %s
-            """, (nueva_contrasena, id_administrador))
+            """, (nuevo_hash, id_administrador))
+
 
         conexion.commit()
         return jsonify({"mensaje": "Administrador actualizado correctamente"}), 200
@@ -2467,7 +2480,7 @@ def eliminar_administrador(id_administrador):
 # =====================================================
 
 @app.route("/api/pagos", methods=["GET"])
-@app.route("/api/pagos", methods=["GET"])
+
 def listar_pagos():
     conexion = obtener_conexion()
 
@@ -2526,10 +2539,10 @@ def consultar_pago(id_pago):
             return jsonify({"error": "Pago no encontrado"}), 404
 
         return app.response_class(
-    response=__import__("json").dumps(pago, default=str),
-    status=200,
-    mimetype="application/json"
-)
+            response=__import__("json").dumps(pago, default=str),
+            status=200,
+            mimetype="application/json"
+        )
 
     except Exception as error:
         return jsonify({"error": str(error)}), 500
