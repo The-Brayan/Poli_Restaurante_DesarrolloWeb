@@ -756,6 +756,7 @@ async function cargarAdministradores() {
 
     document.getElementById("contenido").prepend(formulario);
 }
+
 async function cargarPagos() {
     await cargarDatos("pagos", "Gestión de pagos");
 
@@ -764,11 +765,15 @@ async function cargarPagos() {
     formulario.innerHTML = `
         <h3>Registrar nuevo pago</h3>
 
-        <label>ID del pedido</label>
-        <input type="number" id="id_pedido_pago" min="1" required>
+        <label>Pedido</label>
+        <select id="id_pedido_pago" required>
+            <option value="">Seleccione un pedido</option>
+        </select>
 
-        <label>ID del cajero</label>
-        <input type="number" id="id_cajero_pago" min="1" required>
+        <label>Cajero</label>
+        <select id="id_cajero_pago" required>
+            <option value="">Seleccione un cajero</option>
+        </select>
 
         <label>Método de pago</label>
         <select id="metodo_pago" required>
@@ -779,34 +784,91 @@ async function cargarPagos() {
         </select>
 
         <label>Monto</label>
-        <input type="number" id="monto_pago" min="0.01" step="0.01" required>
+        <input type="number" id="monto_pago"
+               min="0.01" step="0.01" required>
 
         <button type="submit">Registrar pago</button>
     `;
+
+    try {
+        const [respuestaPedidos, respuestaCajeros] =
+            await Promise.all([
+                fetch(`${API_URL}/pedidos`),
+                fetch(`${API_URL}/cajeros`)
+            ]);
+
+        if (!respuestaPedidos.ok || !respuestaCajeros.ok) {
+            throw new Error("No se pudieron cargar los datos");
+        }
+
+        const pedidos = await respuestaPedidos.json();
+        const cajeros = await respuestaCajeros.json();
+
+        const selectPedidos =
+            formulario.querySelector("#id_pedido_pago");
+
+        const selectCajeros =
+            formulario.querySelector("#id_cajero_pago");
+
+        pedidos.forEach(pedido => {
+            const opcion = document.createElement("option");
+
+            opcion.value = pedido.id_pedido;
+            opcion.textContent =
+                `Pedido #${pedido.id_pedido} - ${pedido.tipo_pedido} - ${pedido.estado}`;
+
+            selectPedidos.appendChild(opcion);
+        });
+
+        cajeros.forEach(cajero => {
+            const opcion = document.createElement("option");
+
+            opcion.value = cajero.id_cajero;
+            opcion.textContent =
+                `${cajero.nombre} - ${Number(cajero.estado) === 1 ? "Activo" : "Inactivo"}`;
+
+            selectCajeros.appendChild(opcion);
+        });
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("No se pudieron cargar los pedidos o cajeros");
+    }
 
     formulario.addEventListener("submit", registrarPago);
 
     document.getElementById("contenido").prepend(formulario);
 }
+
+
 async function cargarDetallesPedido() {
-    await cargarDatos("detalles-pedido", "Gestión de detalles de pedido");
+    await cargarDatos(
+        "detalles-pedido",
+        "Gestión de detalles de pedido"
+    );
 
     const formulario = document.createElement("form");
 
     formulario.innerHTML = `
         <h3>Registrar detalle de pedido</h3>
 
-        <label>ID del pedido</label>
-        <input type="number" id="id_pedido_detalle" min="1" required>
+        <label>Pedido</label>
+        <select id="id_pedido_detalle" required>
+            <option value="">Seleccione un pedido</option>
+        </select>
 
-        <label>ID del producto</label>
-        <input type="number" id="id_producto_detalle" min="1" required>
+        <label>Producto</label>
+        <select id="id_producto_detalle" required>
+            <option value="">Seleccione un producto</option>
+        </select>
 
         <label>Cantidad</label>
-        <input type="number" id="cantidad_detalle" min="1" required>
+        <input type="number" id="cantidad_detalle"
+               min="1" value="1" required>
 
         <label>Precio unitario</label>
-        <input type="number" id="precio_unitario_detalle" min="0" step="0.01" required>
+        <input type="number" id="precio_unitario_detalle"
+               min="0" step="0.01" required>
 
         <label>Notas</label>
         <textarea id="notas_detalle"></textarea>
@@ -814,10 +876,72 @@ async function cargarDetallesPedido() {
         <button type="submit">Registrar detalle</button>
     `;
 
-    formulario.addEventListener("submit", registrarDetallePedido);
+    try {
+        const [respuestaPedidos, respuestaProductos] =
+            await Promise.all([
+                fetch(`${API_URL}/pedidos`),
+                fetch(`${API_URL}/productos`)
+            ]);
+
+        if (!respuestaPedidos.ok || !respuestaProductos.ok) {
+            throw new Error("No se pudieron cargar los datos");
+        }
+
+        const pedidos = await respuestaPedidos.json();
+        const productos = await respuestaProductos.json();
+
+        const selectPedidos =
+            formulario.querySelector("#id_pedido_detalle");
+
+        const selectProductos =
+            formulario.querySelector("#id_producto_detalle");
+
+        const precioUnitario =
+            formulario.querySelector("#precio_unitario_detalle");
+
+        pedidos.forEach(pedido => {
+            const opcion = document.createElement("option");
+
+            opcion.value = pedido.id_pedido;
+            opcion.textContent =
+                `Pedido #${pedido.id_pedido} - ${pedido.tipo_pedido} - ${pedido.estado}`;
+
+            selectPedidos.appendChild(opcion);
+        });
+
+        productos.forEach(producto => {
+            const opcion = document.createElement("option");
+
+            opcion.value = producto.id_producto;
+            opcion.textContent = producto.nombre;
+
+            selectProductos.appendChild(opcion);
+        });
+
+        selectProductos.addEventListener("change", () => {
+            const productoSeleccionado = productos.find(
+                producto =>
+                    String(producto.id_producto) ===
+                    selectProductos.value
+            );
+
+            precioUnitario.value =
+                productoSeleccionado?.precio ?? "";
+        });
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("No se pudieron cargar los pedidos o productos");
+    }
+
+    formulario.addEventListener(
+        "submit",
+        registrarDetallePedido
+    );
 
     document.getElementById("contenido").prepend(formulario);
 }
+
 async function registrarDetallePedido(event) {
     event.preventDefault();
 
