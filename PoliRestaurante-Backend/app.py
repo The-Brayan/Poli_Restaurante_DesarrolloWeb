@@ -3635,6 +3635,8 @@ def crear_usuario_restaurante(tabla, campo_id):
             "error": "Faltan campos obligatorios",
             "campos": faltantes
         }), 400
+    if not isinstance(datos["contrasena_hash"], str) or not datos["contrasena_hash"].strip():
+        return jsonify({"error": "La contraseña no puede estar vacía"}), 400
 
     estado = datos.get("estado", 1)
     if estado not in (0, 1):
@@ -3654,7 +3656,7 @@ def crear_usuario_restaurante(tabla, campo_id):
             (
                 datos["nombre"],
                 datos["usuario_login"],
-                datos["contrasena_hash"],
+                generate_password_hash(datos["contrasena_hash"]),
                 estado
             )
         )
@@ -3696,9 +3698,11 @@ def actualizar_usuario_restaurante(tabla, campo_id, id_usuario):
     }
 
     if "contrasena_hash" in datos:
-        if not datos["contrasena_hash"]:
+        if not isinstance(datos["contrasena_hash"], str) or not datos["contrasena_hash"].strip():
             return jsonify({"error": "La contraseña no puede estar vacía"}), 400
-        cambios["contrasena_hash"] = datos["contrasena_hash"]
+        cambios["contrasena_hash"] = generate_password_hash(
+            datos["contrasena_hash"]
+        )
 
     if not cambios:
         return jsonify({"error": "No enviaste campos para actualizar"}), 400
