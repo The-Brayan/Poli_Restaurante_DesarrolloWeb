@@ -452,6 +452,280 @@ async function cargarCocina() {
     document.getElementById("contenido").prepend(formulario);
 }
 
+async function cargarCategorias() {
+    await cargarDatos("categorias", "Gestión de categorías");
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar categoría</h3>
+
+        <label>Nombre de la categoría</label>
+        <input type="text" id="nombre_categoria" maxlength="255" required>
+
+        <button type="submit">Registrar categoría</button>
+    `;
+
+    formulario.addEventListener("submit", registrarCategoria);
+
+    document.getElementById("contenido").prepend(formulario);
+}
+
+async function cargarHistorialEstados() {
+    await cargarDatos(
+        "historial-estados",
+        "Gestión de historial de estados"
+    );
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar historial de estado</h3>
+
+        <label>Pedido</label>
+        <select id="id_pedido_historial" required>
+            <option value="">Seleccione un pedido</option>
+        </select>
+
+        <label>Estado</label>
+        <select id="estado_historial" required>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En preparación">En preparación</option>
+            <option value="Listo">Listo</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Cancelado">Cancelado</option>
+        </select>
+
+        <label>Rol del usuario</label>
+        <select id="rol_usuario_cambio">
+            <option value="">Seleccione un rol</option>
+            <option value="administrador">Administrador</option>
+            <option value="cajero">Cajero</option>
+            <option value="mesero">Mesero</option>
+            <option value="cocina">Cocina</option>
+        </select>
+
+        <label>ID del usuario que realiza el cambio</label>
+        <input type="number" id="id_usuario_cambio" min="1" step="1">
+
+        <button type="submit">Registrar historial</button>
+    `;
+
+    try {
+        const respuesta = await fetch(`${API_URL}/pedidos`);
+
+        if (!respuesta.ok) {
+            throw new Error("No se pudieron cargar los pedidos");
+        }
+
+        const pedidos = await respuesta.json();
+
+        const selectPedidos = formulario.querySelector(
+            "#id_pedido_historial"
+        );
+
+        pedidos.forEach(pedido => {
+            const opcion = document.createElement("option");
+
+            opcion.value = pedido.id_pedido;
+
+            opcion.textContent =
+                `Pedido #${pedido.id_pedido} - ${pedido.tipo_pedido} - ${pedido.estado}`;
+
+            selectPedidos.appendChild(opcion);
+        });
+
+        formulario.addEventListener(
+            "submit",
+            registrarHistorialEstado
+        );
+
+        document.getElementById("contenido").prepend(formulario);
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert(error.message);
+    }
+}
+
+async function cargarPedidos() {
+    await cargarDatos("pedidos", "Gestión de pedidos");
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar pedido</h3>
+
+        <label>Tipo de pedido</label>
+        <select id="tipo_pedido" required>
+            <option value="Mesa">Mesa</option>
+            <option value="Domicilio">Domicilio</option>
+            <option value="Para llevar">Para llevar</option>
+        </select>
+
+        <div id="campo_mesa_pedido">
+            <label>Mesa</label>
+            <select id="id_mesa_pedido">
+                <option value="">Seleccione una mesa</option>
+            </select>
+        </div>
+
+        <div id="campo_direccion_pedido">
+            <label>Dirección de entrega</label>
+            <input type="text" id="direccion_entrega" maxlength="255">
+        </div>
+
+        <label>Mesero responsable</label>
+        <select id="id_mesero_pedido" required>
+            <option value="">Seleccione un mesero</option>
+        </select>
+
+        <label>Estado</label>
+        <select id="estado_pedido" required>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En preparación">En preparación</option>
+            <option value="Listo">Listo</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Cancelado">Cancelado</option>
+        </select>
+
+        <button type="submit">Registrar pedido</button>
+    `;
+
+    try {
+        const [respuestaMesas, respuestaMeseros] = await Promise.all([
+            fetch(`${API_URL}/mesas`),
+            fetch(`${API_URL}/meseros`)
+        ]);
+
+        if (!respuestaMesas.ok || !respuestaMeseros.ok) {
+            throw new Error("No se pudieron cargar las mesas o los meseros");
+        }
+
+        const mesas = await respuestaMesas.json();
+        const meseros = await respuestaMeseros.json();
+
+        const selectMesas = formulario.querySelector("#id_mesa_pedido");
+        const selectMeseros = formulario.querySelector("#id_mesero_pedido");
+
+        mesas.forEach(mesa => {
+            const opcion = document.createElement("option");
+            opcion.value = mesa.id_mesa;
+            opcion.textContent = `Mesa ${mesa.numero} - ${mesa.estado}`;
+            selectMesas.appendChild(opcion);
+        });
+
+        meseros.forEach(mesero => {
+            const opcion = document.createElement("option");
+            opcion.value = mesero.id_mesero;
+            opcion.textContent = `${mesero.nombre} - ${Number(mesero.estado) === 1 ? "Activo" : "Inactivo"}`;
+            selectMeseros.appendChild(opcion);
+        });
+
+        formulario.addEventListener("submit", registrarPedido);
+
+        document.getElementById("contenido").prepend(formulario);
+
+        document.getElementById("tipo_pedido")
+            .addEventListener("change", actualizarCamposPedido);
+
+        actualizarCamposPedido();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert(error.message);
+    }
+}
+
+function actualizarCamposPedido() {
+
+    const tipo = document.getElementById("tipo_pedido").value;
+
+    const campoMesa = document.getElementById("campo_mesa_pedido");
+    const campoDireccion = document.getElementById("campo_direccion_pedido");
+
+    const mesa = document.getElementById("id_mesa_pedido");
+    const direccion = document.getElementById("direccion_entrega");
+
+    campoMesa.style.display = tipo === "Mesa" ? "block" : "none";
+
+    campoDireccion.style.display =
+        tipo === "Domicilio" ? "block" : "none";
+
+    mesa.required = tipo === "Mesa";
+    direccion.required = tipo === "Domicilio";
+
+    if (tipo !== "Mesa") {
+        mesa.value = "";
+    }
+
+    if (tipo !== "Domicilio") {
+        direccion.value = "";
+    }
+}
+
+async function cargarMeseros() {
+    await cargarDatos("meseros", "Gestión de meseros");
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar mesero</h3>
+
+        <label>Nombre</label>
+        <input type="text" id="nombre_mesero" maxlength="100" required>
+
+        <label>Usuario de acceso</label>
+        <input type="text" id="usuario_mesero" maxlength="50" required>
+
+        <label>Contraseña</label>
+        <input type="password" id="contrasena_mesero" autocomplete="new-password" required>
+
+        <label>Estado</label>
+        <select id="estado_mesero" required>
+            <option value="1">Activo</option>
+            <option value="0">Inactivo</option>
+        </select>
+
+        <button type="submit">Registrar mesero</button>
+    `;
+
+    formulario.addEventListener("submit", registrarMesero);
+
+    document.getElementById("contenido").prepend(formulario);
+}
+
+async function cargarCajeros() {
+    await cargarDatos("cajeros", "Gestión de cajeros");
+
+    const formulario = document.createElement("form");
+
+    formulario.innerHTML = `
+        <h3>Registrar cajero</h3>
+
+        <label>Nombre</label>
+        <input type="text" id="nombre_cajero" maxlength="100" required>
+
+        <label>Usuario de acceso</label>
+        <input type="text" id="usuario_cajero" maxlength="50" required>
+
+        <label>Contraseña</label>
+        <input type="password" id="contrasena_cajero" autocomplete="new-password" required>
+
+        <label>Estado</label>
+        <select id="estado_cajero" required>
+            <option value="1">Activo</option>
+            <option value="0">Inactivo</option>
+        </select>
+
+        <button type="submit">Registrar cajero</button>
+    `;
+
+    formulario.addEventListener("submit", registrarCajero);
+
+    document.getElementById("contenido").prepend(formulario);
+}
+
 async function cargarAdministradores() {
     await cargarDatos("administradores", "Gestión de administradores");
 
@@ -482,6 +756,7 @@ async function cargarAdministradores() {
 
     document.getElementById("contenido").prepend(formulario);
 }
+
 async function cargarPagos() {
     await cargarDatos("pagos", "Gestión de pagos");
 
@@ -490,11 +765,15 @@ async function cargarPagos() {
     formulario.innerHTML = `
         <h3>Registrar nuevo pago</h3>
 
-        <label>ID del pedido</label>
-        <input type="number" id="id_pedido_pago" min="1" required>
+        <label>Pedido</label>
+        <select id="id_pedido_pago" required>
+            <option value="">Seleccione un pedido</option>
+        </select>
 
-        <label>ID del cajero</label>
-        <input type="number" id="id_cajero_pago" min="1" required>
+        <label>Cajero</label>
+        <select id="id_cajero_pago" required>
+            <option value="">Seleccione un cajero</option>
+        </select>
 
         <label>Método de pago</label>
         <select id="metodo_pago" required>
@@ -505,34 +784,91 @@ async function cargarPagos() {
         </select>
 
         <label>Monto</label>
-        <input type="number" id="monto_pago" min="0.01" step="0.01" required>
+        <input type="number" id="monto_pago"
+               min="0.01" step="0.01" required>
 
         <button type="submit">Registrar pago</button>
     `;
+
+    try {
+        const [respuestaPedidos, respuestaCajeros] =
+            await Promise.all([
+                fetch(`${API_URL}/pedidos`),
+                fetch(`${API_URL}/cajeros`)
+            ]);
+
+        if (!respuestaPedidos.ok || !respuestaCajeros.ok) {
+            throw new Error("No se pudieron cargar los datos");
+        }
+
+        const pedidos = await respuestaPedidos.json();
+        const cajeros = await respuestaCajeros.json();
+
+        const selectPedidos =
+            formulario.querySelector("#id_pedido_pago");
+
+        const selectCajeros =
+            formulario.querySelector("#id_cajero_pago");
+
+        pedidos.forEach(pedido => {
+            const opcion = document.createElement("option");
+
+            opcion.value = pedido.id_pedido;
+            opcion.textContent =
+                `Pedido #${pedido.id_pedido} - ${pedido.tipo_pedido} - ${pedido.estado}`;
+
+            selectPedidos.appendChild(opcion);
+        });
+
+        cajeros.forEach(cajero => {
+            const opcion = document.createElement("option");
+
+            opcion.value = cajero.id_cajero;
+            opcion.textContent =
+                `${cajero.nombre} - ${Number(cajero.estado) === 1 ? "Activo" : "Inactivo"}`;
+
+            selectCajeros.appendChild(opcion);
+        });
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("No se pudieron cargar los pedidos o cajeros");
+    }
 
     formulario.addEventListener("submit", registrarPago);
 
     document.getElementById("contenido").prepend(formulario);
 }
+
+
 async function cargarDetallesPedido() {
-    await cargarDatos("detalles-pedido", "Gestión de detalles de pedido");
+    await cargarDatos(
+        "detalles-pedido",
+        "Gestión de detalles de pedido"
+    );
 
     const formulario = document.createElement("form");
 
     formulario.innerHTML = `
         <h3>Registrar detalle de pedido</h3>
 
-        <label>ID del pedido</label>
-        <input type="number" id="id_pedido_detalle" min="1" required>
+        <label>Pedido</label>
+        <select id="id_pedido_detalle" required>
+            <option value="">Seleccione un pedido</option>
+        </select>
 
-        <label>ID del producto</label>
-        <input type="number" id="id_producto_detalle" min="1" required>
+        <label>Producto</label>
+        <select id="id_producto_detalle" required>
+            <option value="">Seleccione un producto</option>
+        </select>
 
         <label>Cantidad</label>
-        <input type="number" id="cantidad_detalle" min="1" required>
+        <input type="number" id="cantidad_detalle"
+               min="1" value="1" required>
 
         <label>Precio unitario</label>
-        <input type="number" id="precio_unitario_detalle" min="0" step="0.01" required>
+        <input type="number" id="precio_unitario_detalle"
+               min="0" step="0.01" required>
 
         <label>Notas</label>
         <textarea id="notas_detalle"></textarea>
@@ -540,10 +876,72 @@ async function cargarDetallesPedido() {
         <button type="submit">Registrar detalle</button>
     `;
 
-    formulario.addEventListener("submit", registrarDetallePedido);
+    try {
+        const [respuestaPedidos, respuestaProductos] =
+            await Promise.all([
+                fetch(`${API_URL}/pedidos`),
+                fetch(`${API_URL}/productos`)
+            ]);
+
+        if (!respuestaPedidos.ok || !respuestaProductos.ok) {
+            throw new Error("No se pudieron cargar los datos");
+        }
+
+        const pedidos = await respuestaPedidos.json();
+        const productos = await respuestaProductos.json();
+
+        const selectPedidos =
+            formulario.querySelector("#id_pedido_detalle");
+
+        const selectProductos =
+            formulario.querySelector("#id_producto_detalle");
+
+        const precioUnitario =
+            formulario.querySelector("#precio_unitario_detalle");
+
+        pedidos.forEach(pedido => {
+            const opcion = document.createElement("option");
+
+            opcion.value = pedido.id_pedido;
+            opcion.textContent =
+                `Pedido #${pedido.id_pedido} - ${pedido.tipo_pedido} - ${pedido.estado}`;
+
+            selectPedidos.appendChild(opcion);
+        });
+
+        productos.forEach(producto => {
+            const opcion = document.createElement("option");
+
+            opcion.value = producto.id_producto;
+            opcion.textContent = producto.nombre;
+
+            selectProductos.appendChild(opcion);
+        });
+
+        selectProductos.addEventListener("change", () => {
+            const productoSeleccionado = productos.find(
+                producto =>
+                    String(producto.id_producto) ===
+                    selectProductos.value
+            );
+
+            precioUnitario.value =
+                productoSeleccionado?.precio ?? "";
+        });
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("No se pudieron cargar los pedidos o productos");
+    }
+
+    formulario.addEventListener(
+        "submit",
+        registrarDetallePedido
+    );
 
     document.getElementById("contenido").prepend(formulario);
 }
+
 async function registrarDetallePedido(event) {
     event.preventDefault();
 
@@ -636,6 +1034,290 @@ async function registrarPago(event) {
         alert("Error al conectar con el servidor");
     }
 }
+
+async function registrarCategoria(event) {
+    event.preventDefault();
+
+    const formulario = event.target;
+    const id = formulario.dataset.id;
+
+    const datos = {
+        nombre: document.getElementById("nombre_categoria").value.trim()
+    };
+
+    if (!datos.nombre) {
+        alert("El nombre de la categoría no puede estar vacío");
+        return;
+    }
+
+    const metodo = id ? "PUT" : "POST";
+
+    const url = id
+        ? `${API_URL}/categorias/${id}`
+        : `${API_URL}/categorias`;
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            alert(resultado.error || "No se pudo guardar la categoría");
+            return;
+        }
+
+        alert(id
+            ? "Categoría actualizada correctamente"
+            : "Categoría registrada correctamente");
+
+        cargarCategorias();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error al conectar con el servidor");
+    }
+}
+
+async function registrarHistorialEstado(event) {
+    event.preventDefault();
+
+    const formulario = event.target;
+    const id = formulario.dataset.id;
+
+    const usuario = document.getElementById(
+        "id_usuario_cambio"
+    ).value;
+
+    const datos = {
+        estado: document.getElementById("estado_historial").value,
+
+        rol_usuario_cambio:
+            document.getElementById("rol_usuario_cambio").value || null,
+
+        id_usuario_cambio:
+            usuario ? Number(usuario) : null
+    };
+
+    if (!id) {
+        datos.id_pedido = Number(
+            document.getElementById("id_pedido_historial").value
+        );
+    }
+
+    const metodo = id ? "PUT" : "POST";
+
+    const url = id
+        ? `${API_URL}/historial-estados/${id}`
+        : `${API_URL}/historial-estados`;
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            alert(resultado.error || "No se pudo guardar el historial");
+            return;
+        }
+
+        alert(id
+            ? "Historial actualizado correctamente"
+            : "Historial registrado correctamente");
+
+        cargarHistorialEstados();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error al conectar con el servidor");
+    }
+}
+
+async function registrarPedido(event) {
+    event.preventDefault();
+
+    const formulario = event.target;
+    const id = formulario.dataset.id;
+
+    const tipo = document.getElementById("tipo_pedido").value;
+
+    const datos = {
+        tipo_pedido: tipo,
+
+        id_mesa: tipo === "Mesa"
+            ? Number(document.getElementById("id_mesa_pedido").value)
+            : null,
+
+        direccion_entrega: tipo === "Domicilio"
+            ? document.getElementById("direccion_entrega").value.trim()
+            : null,
+
+        id_mesero: Number(
+            document.getElementById("id_mesero_pedido").value
+        ),
+
+        estado: document.getElementById("estado_pedido").value.trim()
+    };
+
+    if (!datos.estado) {
+        alert("El estado no puede estar vacío");
+        return;
+    }
+
+    if (tipo === "Domicilio" && !datos.direccion_entrega) {
+        alert("Debes ingresar una dirección de entrega");
+        return;
+    }
+
+    const metodo = id ? "PUT" : "POST";
+
+    const url = id
+        ? `${API_URL}/pedidos/${id}`
+        : `${API_URL}/pedidos`;
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            alert(resultado.error || "No se pudo guardar el pedido");
+            return;
+        }
+
+        alert(id
+            ? "Pedido actualizado correctamente"
+            : "Pedido registrado correctamente");
+
+        cargarPedidos();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error al conectar con el servidor");
+    }
+}
+
+async function registrarMesero(event) {
+    event.preventDefault();
+
+    const formulario = event.target;
+    const id = formulario.dataset.id;
+
+    const datos = {
+        nombre: document.getElementById("nombre_mesero").value,
+        usuario_login: document.getElementById("usuario_mesero").value,
+        estado: Number(document.getElementById("estado_mesero").value)
+    };
+
+    const contrasena = document.getElementById("contrasena_mesero").value;
+
+    if (contrasena) {
+        datos.contrasena_hash = contrasena;
+    }
+
+    const metodo = id ? "PUT" : "POST";
+
+    const url = id
+        ? `${API_URL}/meseros/${id}`
+        : `${API_URL}/meseros`;
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            alert(resultado.error || "No se pudo guardar el mesero");
+            return;
+        }
+
+        alert(id
+            ? "Mesero actualizado correctamente"
+            : "Mesero registrado correctamente");
+
+        cargarMeseros();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error al conectar con el servidor");
+    }
+}
+
+async function registrarCajero(event) {
+    event.preventDefault();
+
+    const formulario = event.target;
+    const id = formulario.dataset.id;
+
+    const datos = {
+        nombre: document.getElementById("nombre_cajero").value,
+        usuario_login: document.getElementById("usuario_cajero").value,
+        estado: Number(document.getElementById("estado_cajero").value)
+    };
+
+    const contrasena = document.getElementById("contrasena_cajero").value;
+
+    if (contrasena) {
+        datos.contrasena_hash = contrasena;
+    }
+
+    const metodo = id ? "PUT" : "POST";
+
+    const url = id
+        ? `${API_URL}/cajeros/${id}`
+        : `${API_URL}/cajeros`;
+
+    try {
+        const respuesta = await fetch(url, {
+            method: metodo,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(datos)
+        });
+
+        const resultado = await respuesta.json();
+
+        if (!respuesta.ok) {
+            alert(resultado.error || "No se pudo guardar el cajero");
+            return;
+        }
+
+        alert(id
+            ? "Cajero actualizado correctamente"
+            : "Cajero registrado correctamente");
+
+        cargarCajeros();
+
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Error al conectar con el servidor");
+    }
+}
+
 async function registrarAdministrador(event) {
     event.preventDefault();
 
@@ -1117,6 +1799,11 @@ async function eliminarRegistro(endpoint, registro) {
         administradores: "id_administrador",
         pagos: "id_pago",
         "detalles-pedido": "id_detalle",
+        cajeros: "id_cajero",
+        categorias: "id_categoria",
+        meseros: "id_mesero",
+        pedidos: "id_pedido",
+        "historial-estados": "id_historial",
     };
 
     const id = registro[identificadores[endpoint]];
@@ -1175,6 +1862,24 @@ async function eliminarRegistro(endpoint, registro) {
             case "detalles-pedido":
                cargarDetallesPedido();
                 break;
+            case "cajeros":
+                cargarCajeros();
+                break;
+            case "categorias":
+                cargarCategorias();
+                break;
+            case "categorias":
+                cargarCategorias();
+                break;
+            case "meseros":
+                cargarMeseros();
+                break;
+            case "pedidos":
+                cargarPedidos();
+                break;
+            case "historial-estados":
+                cargarHistorialEstados();
+                break;
         }
 
     } catch (error) {
@@ -1187,6 +1892,112 @@ async function eliminarRegistro(endpoint, registro) {
 function editarRegistro(endpoint, registro) {
 
     const formulario = document.querySelector("#contenido form");
+
+    if (endpoint === "historial-estados") {
+
+        formulario.dataset.id = registro.id_historial;
+
+        const pedido = document.getElementById(
+            "id_pedido_historial"
+        );
+
+        pedido.value = registro.id_pedido;
+        pedido.disabled = true;
+
+        document.getElementById("estado_historial").value =
+            registro.estado;
+
+        document.getElementById("rol_usuario_cambio").value =
+            registro.rol_usuario_cambio ?? "";
+
+        document.getElementById("id_usuario_cambio").value =
+            registro.id_usuario_cambio ?? "";
+
+        formulario.querySelector("h3").textContent =
+            "Editar historial de estado";
+    }
+
+    if (endpoint === "pedidos") {
+
+        formulario.dataset.id = registro.id_pedido;
+
+        document.getElementById("tipo_pedido").value =
+            registro.tipo_pedido;
+
+        actualizarCamposPedido();
+
+        document.getElementById("id_mesa_pedido").value =
+            registro.id_mesa ?? "";
+
+        document.getElementById("direccion_entrega").value =
+            registro.direccion_entrega ?? "";
+
+        document.getElementById("id_mesero_pedido").value =
+            registro.id_mesero;
+
+        document.getElementById("estado_pedido").value =
+            registro.estado;
+
+        formulario.querySelector("h3").textContent =
+            "Editar pedido";
+    }
+
+    if (endpoint === "meseros") {
+
+        formulario.dataset.id = registro.id_mesero;
+
+        document.getElementById("nombre_mesero").value =
+            registro.nombre ?? "";
+
+        document.getElementById("usuario_mesero").value =
+            registro.usuario_login ?? "";
+
+        const contrasena = document.getElementById("contrasena_mesero");
+
+        contrasena.value = "";
+        contrasena.required = false;
+        contrasena.placeholder = "Dejar vacía para conservar la contraseña";
+
+        document.getElementById("estado_mesero").value =
+            registro.estado;
+
+        formulario.querySelector("h3").textContent =
+            "Editar mesero";
+    }
+
+    if (endpoint === "categorias") {
+
+        formulario.dataset.id = registro.id_categoria;
+
+        document.getElementById("nombre_categoria").value =
+            registro.nombre ?? "";
+
+        formulario.querySelector("h3").textContent =
+            "Editar categoría";
+    }
+
+    if (endpoint === "cajeros") {
+
+        formulario.dataset.id = registro.id_cajero;
+
+        document.getElementById("nombre_cajero").value =
+            registro.nombre ?? "";
+
+        document.getElementById("usuario_cajero").value =
+            registro.usuario_login ?? "";
+
+        const contrasena = document.getElementById("contrasena_cajero");
+
+        contrasena.value = "";
+        contrasena.required = false;
+        contrasena.placeholder = "Dejar vacía para conservar la contraseña";
+
+        document.getElementById("estado_cajero").value =
+            registro.estado;
+
+        formulario.querySelector("h3").textContent =
+            "Editar cajero";
+    }
 
     if (endpoint === "clientes") {
 
